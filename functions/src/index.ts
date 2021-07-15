@@ -3,8 +3,10 @@ import * as express from "express";
 
 const app = express();
 
+app.set("view engine", "ejs");
+
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.render("index");
 });
 
 exports.app = functions.https.onRequest(app);
