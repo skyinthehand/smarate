@@ -26,6 +26,23 @@ passport.deserializeUser((obj, done) => {
   done(null, null);
 });
 
+declare module "express-session" {
+  export interface SessionData {
+    passport: {
+      user: {
+        profile: {
+          id: string,
+          username: string,
+          displayName: string,
+          photos: {
+            value: string,
+          }[],
+        }
+      }
+    }
+  }
+}
+
 const app = express();
 
 app.use(passport.initialize());
@@ -44,7 +61,13 @@ app.get("/", (req, res) => {
 app.use("/oauth", oauth);
 
 app.get("/my", (req, res) => {
-  res.send("my page");
+  if (!req.session.passport) {
+    res.redirect("/");
+    return;
+  }
+  res.render("my", {
+    user: req.session.passport.user,
+  });
 });
 
 exports.app = functions.https.onRequest(app);
