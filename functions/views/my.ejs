@@ -19,7 +19,11 @@
 </header>
 
 <main class="px-3">
-    <a href="/oauth" class="btn btn-lg btn-secondary fw-bold">Twitterでログイン</a>
+    <div>
+        <img src="<%= user.profile.photos[0].value %>" />
+        <div><%= user.profile.username %></div>
+        <div><%= user.profile.displayName %></div>
+    </div>
 </main>
 
 </body>
