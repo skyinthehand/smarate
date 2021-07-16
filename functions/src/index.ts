@@ -46,6 +46,7 @@ declare module "express-session" {
 const app = express();
 
 app.use(passport.initialize());
+app.set("trust proxy", 1);
 app.use(session({
   secret: "secret",
   resave: false,
