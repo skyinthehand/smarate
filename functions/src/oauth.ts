@@ -21,16 +21,23 @@ router.get(
       firestore
         .getUserIdByTwitterId(twitterUser.profile.id)
         .then((existUserId) => {
+          if (!req.session) {
+            res.redirect("/");
+            return;
+          }
           const currentDate = moment.tz("Asia/Tokyo").toDate();
+          const twitterData = {
+            id: twitterUser.profile.id,
+            username: twitterUser.profile.username,
+            displayName: twitterUser.profile.displayName,
+            icon: twitterUser.profile.photos[0].value,
+          };
+
           const userData: firestore.IUserData = {
-            twitter: {
-              id: twitterUser.profile.id,
-              username: twitterUser.profile.username,
-              displayName: twitterUser.profile.displayName,
-              icon: twitterUser.profile.photos[0].value,
-            },
+            twitter: twitterData,
             updatedDate: currentDate,
           };
+          req.session.twitter = twitterData;
           if (existUserId) {
             return firestore.updateUserData(existUserId, userData);
           }
