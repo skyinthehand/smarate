@@ -229,7 +229,7 @@ export async function getMatchByUserIdAndSeasonId(
   const db = admin.firestore();
   const matchsRef = db.collection("matchs");
   const query1Snapshot = await matchsRef
-    .where("userId0.userId", "==", userId)
+    .where("user0MatchData.userId", "==", userId)
     .where("seasonId", "==", seasonId)
     .get();
   if (query1Snapshot.docs.length > 0) {
@@ -237,7 +237,7 @@ export async function getMatchByUserIdAndSeasonId(
     return doc.data() as IMatchData;
   }
   const query2Snapshot = await matchsRef
-    .where("userId1.userId", "==", userId)
+    .where("user1MatchData.userId", "==", userId)
     .where("seasonId", "==", seasonId)
     .get();
   if (query2Snapshot.docs.length > 0) {
@@ -300,7 +300,7 @@ export async function updateMatchRoomId(
   const db = admin.firestore();
   const matchsRef = db.collection("matchs");
   const query1Snapshot = await matchsRef
-    .where("userId0.userId", "==", userId)
+    .where("user0MatchData.userId", "==", userId)
     .where("seasonId", "==", seasonId)
     .get();
   const roomData = {
