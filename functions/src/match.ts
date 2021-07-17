@@ -18,6 +18,33 @@ router.get("/", (req, res, next) => {
 
   const userId = req.session.userId;
   const seasonId = req.session.seasonId;
+
+  const convertMatchDataToRender = async (matchData: firestore.IMatchData) => {
+    const user0Data = await firestore.getUserData(
+      matchData.user0MatchData.userId
+    );
+    if (!user0Data) {
+      throw new Error("no user data");
+    }
+    if (!matchData.user1MatchData) {
+      return {
+        user0TwitterData: user0Data.twitter,
+        matchData: matchData,
+      };
+    }
+    const user1Data = await firestore.getUserData(
+      matchData.user1MatchData.userId
+    );
+    if (!user1Data) {
+      throw new Error("no user data");
+    }
+    return {
+      user0TwitterData: user0Data.twitter,
+      user1TwitterData: user1Data.twitter,
+      matchData: matchData,
+    };
+  };
+
   firestore
     .getMatchByUserIdAndSeasonId(userId, seasonId)
     .then((matchData) => {
@@ -25,46 +52,17 @@ router.get("/", (req, res, next) => {
         throw new Error("no session");
       }
       if (matchData !== null) {
-        if (matchData.user1MatchData) {
-          firestore
-            .getUserData(matchData.user1MatchData.userId)
-            .then((user1Data) => {
-              firestore
-                .getUserData(matchData.user0MatchData.userId)
-                .then((user0Data) => {
-                  if (!req.session) {
-                    throw new Error("no session");
-                  }
-                  if (!user0Data || !user1Data) {
-                    throw new Error("no opponent user data");
-                  }
-                  res.render("match/index", {
-                    user0TwitterData: user0Data.twitter,
-                    user1TwitterData: user1Data.twitter,
-                    matchData: matchData,
-                  });
-                });
-            });
-        }
-
-        res.render("match/index", {
-          user0TwitterData: req.session.twitter,
-          matchData: matchData,
+        convertMatchDataToRender(matchData).then((renderData) => {
+          res.render("match/index", renderData);
         });
-        return;
       }
       firestore.createMatch(userId, seasonId).then((matchData) => {
         if (matchData === null) {
-          throw new Error("no match data");
+          throw new Error("failed to create match data");
         }
-        if (!req.session) {
-          throw new Error("no session");
-        }
-        res.render("match/index", {
-          user0TwitterData: req.session.twitter,
-          matchData: matchData,
+        convertMatchDataToRender(matchData).then((renderData) => {
+          res.render("match/index", renderData);
         });
-        return;
       });
     })
     .catch((err) => {
