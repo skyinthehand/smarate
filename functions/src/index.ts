@@ -110,7 +110,7 @@ app.get("/my", (req, res) => {
     res.redirect("/");
     return;
   }
-  res.render("my", {
+  res.render("my/index", {
     user: req.session.passport.user,
   });
 });
