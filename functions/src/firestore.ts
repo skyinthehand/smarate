@@ -169,6 +169,29 @@ export async function getUserSeasonId(
 }
 
 /**
+ * Get user season data
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<IUserSeasonData | null>}
+ */
+export async function getUserSeasonData(
+  userId: string,
+  seasonId: string
+): Promise<IUserSeasonData | null> {
+  const db = admin.firestore();
+  const userSeasonsRef = db.collection("userSeasons");
+  const querySnapshot = await userSeasonsRef
+    .where("userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  if (querySnapshot.docs.length > 0) {
+    const doc = querySnapshot.docs[0];
+    return doc.data() as IUserSeasonData;
+  }
+  return null;
+}
+
+/**
  * Create user season data
  * @param {string} userId
  * @param {string} seasonId
