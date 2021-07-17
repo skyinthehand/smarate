@@ -113,4 +113,4 @@ app.get("/my", (req, res) => {
   });
 });
 
-exports.app = functions.https.onRequest(app);
+exports.app = functions.region("asia-northeast1").https.onRequest(app);
