@@ -48,17 +48,22 @@ declare module "express-session" {
 const seasonChecker: express.Handler = (req, res, next) => {
   const currentTime = moment().toDate();
 
-  firestore.getSeasonId(currentTime).then((currentSeasonId) => {
-    if (!currentSeasonId) {
+  firestore
+    .getSeasonId(currentTime)
+    .then((currentSeasonId) => {
+      if (currentSeasonId !== null) {
+        return currentSeasonId;
+      }
       const nextSeasonStartTime = moment
         .tz("Asia/Tokyo")
         .subtract(5, "days")
         .startOf("month")
         .toDate();
-      firestore.createSeason(nextSeasonStartTime);
-    }
-    next();
-  });
+      return firestore.createSeason(nextSeasonStartTime);
+    })
+    .then(() => {
+      next();
+    });
 };
 
 firestore.initialize();

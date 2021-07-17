@@ -29,7 +29,7 @@ router.get(
               icon: twitterUser.profile.photos[0].value,
             },
           };
-          firestore.saveUserData(userUuid, userData);
+          return firestore.saveUserData(userUuid, userData);
         })
         .then(() => {
           res.redirect("/my");
