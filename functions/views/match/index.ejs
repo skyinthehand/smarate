@@ -50,7 +50,16 @@
           </button>
         </form>
       </div>
-      <%- include('./_partials/player', {twitterData: twitterData}) %>
+      <div class="row">
+        <div class="col-md-6">
+          <%- include('./_partials/player', {twitterData: twitterData}) %>
+        </div>
+        <div class="col-md-6">
+          <% if (matchData.user1MatchData) { %> <%-
+          include('./_partials/player', {twitterData: opponentTwitterData}) %>
+          <% } %>
+        </div>
+      </div>
     </main>
   </body>
 </html>
