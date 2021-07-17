@@ -35,7 +35,9 @@ router.get(
           res.redirect("/my");
         })
         .catch((err) => {
-          next(err);
+          if (next) {
+            next(err);
+          }
         });
     }
   }
