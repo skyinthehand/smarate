@@ -4,6 +4,7 @@ import * as passport from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
 import * as session from "express-session";
 
+import * as firestore from "./firestore";
 import { router as oauth } from "./oauth";
 
 const config = functions.config();
@@ -42,6 +43,8 @@ declare module "express-session" {
     };
   }
 }
+
+firestore.initialize();
 
 const app = express();
 
