@@ -316,8 +316,10 @@ export async function updateMatchRoomId(
     .where("user0MatchData.userId", "==", userId)
     .where("seasonId", "==", seasonId)
     .get();
+  const currentTime = moment.tz("Asia/Tokyo").toDate();
   const roomData = {
     roomId,
+    updatedDate: currentTime,
     status: EMatchStatus.Wait,
   };
   if (query1Snapshot.docs.length <= 0) {
