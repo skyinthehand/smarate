@@ -10,5 +10,9 @@ router.get("/",
 
 router.get("/callback",
     passport.authenticate(
-        "twitter", {successRedirect: "/my", failureRedirect: "/login"}),
+        "twitter", {failureRedirect: "/login"}
+    ),
+    (req, res) => {
+      res.redirect("/my");
+    }
 );
