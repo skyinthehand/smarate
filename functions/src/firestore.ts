@@ -330,3 +330,88 @@ export async function updateMatchRoomId(
   await matchsRef.doc(matchId).update(roomData);
   return matchId;
 }
+
+/**
+ * Assign match
+ * TODO: リファクタ
+ *
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<IMatchData | null>}
+ */
+export async function assignMatchByUserIdAndSeasonId(
+  userId: string,
+  seasonId: string
+): Promise<IMatchData | null> {
+  const userSeasonData = await getUserSeasonData(userId, seasonId);
+  if (!userSeasonData) {
+    return null;
+  }
+  const userSeasonRate = userSeasonData.rate;
+  const db = admin.firestore();
+  const matchsRef = db.collection("matchs");
+
+  let matchData1Doc = null;
+  const query1Snapshot = await matchsRef
+    .where("seasonId", "==", seasonId)
+    .where("status", "==", EMatchStatus.Wait)
+    .where("user0MatchData.startRate", "<=", userSeasonRate + 100)
+    .get();
+  if (query1Snapshot.docs.length > 0) {
+    const doc = query1Snapshot.docs[0];
+    const matchData = doc.data() as IMatchData;
+    if (!matchData.user1MatchData && matchData.roomId) {
+      matchData1Doc = doc;
+    }
+  }
+
+  let matchData2Doc = null;
+  const query2Snapshot = await matchsRef
+    .where("seasonId", "==", seasonId)
+    .where("status", "==", EMatchStatus.Wait)
+    .where("user0MatchData.startRate", ">", userSeasonRate - 100)
+    .get();
+  if (query2Snapshot.docs.length > 0) {
+    const doc = query2Snapshot.docs[0];
+    const matchData = doc.data() as IMatchData;
+    if (!matchData.user1MatchData && matchData.roomId) {
+      matchData2Doc = doc;
+    }
+  }
+
+  let targetMatchDataDoc = null;
+  if (!matchData1Doc) {
+    targetMatchDataDoc = matchData2Doc;
+  } else if (!matchData2Doc) {
+    targetMatchDataDoc = matchData1Doc;
+  } else {
+    const matchData1 = matchData1Doc.data() as IMatchData;
+    const matchData2 = matchData2Doc.data() as IMatchData;
+    if (
+      matchData1.user0MatchData.startRate - userSeasonRate <
+      userSeasonRate - matchData2.user0MatchData.startRate
+    ) {
+      targetMatchDataDoc = matchData1Doc;
+    } else {
+      targetMatchDataDoc = matchData2Doc;
+    }
+  }
+
+  if (targetMatchDataDoc) {
+    const user1MatchData: IUserMatchData = {
+      userId,
+      startRate: userSeasonData.rate,
+      diffRate: 0,
+    };
+    const currentTime = moment.tz("Asia/Tokyo").toDate();
+    const matchData = {
+      user1MatchData,
+      updatedDate: currentTime,
+      status: EMatchStatus.Progress,
+    };
+    await matchsRef.doc(targetMatchDataDoc.id).update(matchData);
+    return getMatchByUserIdAndSeasonId(userId, seasonId);
+  }
+
+  return null;
+}

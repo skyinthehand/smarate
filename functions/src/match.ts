@@ -30,6 +30,13 @@ router.get("/", (req, res, next) => {
     if (matchData) {
       return matchData;
     }
+    const assignedMatchData = await firestore.assignMatchByUserIdAndSeasonId(
+      userId,
+      seasonId
+    );
+    if (assignedMatchData) {
+      return assignedMatchData;
+    }
     const newMatchData = await firestore.createMatch(userId, seasonId);
     return newMatchData;
   };
