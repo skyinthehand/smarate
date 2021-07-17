@@ -31,7 +31,10 @@ router.get(
           };
           return firestore.saveUserData(userUuid, userData);
         })
-        .then(() => {
+        .then((userId) => {
+          if (req.session) {
+            req.session.userId = userId;
+          }
           res.redirect("/my");
         })
         .catch((err) => {

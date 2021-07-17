@@ -61,7 +61,10 @@ const seasonChecker: express.Handler = (req, res, next) => {
         .toDate();
       return firestore.createSeason(nextSeasonStartTime);
     })
-    .then(() => {
+    .then((seasonId) => {
+      if (req.session) {
+        req.session.seasonId = seasonId;
+      }
       next();
     });
 };
@@ -85,7 +88,17 @@ app.set("view engine", "ejs");
 app.use(seasonChecker);
 
 app.get("/", (req, res) => {
-  res.render("index");
+  if (!req.session || !req.session.userId) {
+    res.render("index", {
+      userId: null,
+      seasonId: null,
+    });
+    return;
+  }
+  res.render("index", {
+    userId: req.session.userId,
+    seasonId: req.session.seasonId,
+  });
 });
 
 app.use("/oauth", oauth);

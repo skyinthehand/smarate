@@ -46,10 +46,11 @@ export async function getUserIdByTwitterId(
 export async function saveUserData(
   userId: string,
   userData: IUserData
-): Promise<void> {
+): Promise<string> {
   const db = admin.firestore();
   const usersRef = db.collection("users");
-  usersRef.doc(userId).set(userData);
+  await usersRef.doc(userId).set(userData);
+  return userId;
 }
 
 /**
