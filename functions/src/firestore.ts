@@ -36,8 +36,10 @@ export interface IUserMatchData {
 
 const EMatchStatus = {
   Completion: 1,
-  Progress: 0,
+  New: 0,
   Cancel: -1,
+  Wait: 2,
+  Progress: 3,
 };
 export type EMatchStatus = typeof EMatchStatus[keyof typeof EMatchStatus];
 
@@ -288,7 +290,7 @@ export async function createMatch(
     user0MatchData: userMatchData,
     createdDate: currentTime,
     updatedDate: currentTime,
-    status: EMatchStatus.Progress,
+    status: EMatchStatus.New,
     resetCount: 0,
   };
   const matchId = uuid();
@@ -316,6 +318,7 @@ export async function updateMatchRoomId(
     .get();
   const roomData = {
     roomId,
+    status: EMatchStatus.Wait,
   };
   if (query1Snapshot.docs.length <= 0) {
     return null;
