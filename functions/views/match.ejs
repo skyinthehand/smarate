@@ -24,7 +24,30 @@
 
     <main class="px-3">
       <div>
-        <p>対戦相手情報</p>
+        <p>ルームID</p>
+        <span>ルームIDを入力してください</span>
+        <span>ルームIDを修正してください</span>
+        <form
+          class="send-room-id-form"
+          action="/match/room"
+          accept-charset="UTF-8"
+          method="POST"
+        >
+          <label for="form-room-id">ルームID</label>
+          <input
+            name="roomId"
+            type="text"
+            class="form-control"
+            id="room-ID"
+            placeholder=""
+            minlength="5"
+            maxlength="5"
+            required
+          />
+          <button type="submit" class="btn btn-lg btn-block form-submit">
+            送信
+          </button>
+        </form>
       </div>
     </main>
   </body>
