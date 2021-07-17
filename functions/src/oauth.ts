@@ -1,6 +1,7 @@
 import * as express from "express";
 import * as passport from "passport";
 import { v4 as uuid } from "uuid";
+import * as moment from "moment-timezone";
 
 import * as firestore from "./firestore";
 
@@ -20,16 +21,22 @@ router.get(
       firestore
         .getUserIdByTwitterId(twitterUser.profile.id)
         .then((existUserId) => {
-          const userUuid = existUserId ?? uuid();
-          const userData = {
+          const currentDate = moment.tz("Asia/Tokyo").toDate();
+          const userData: firestore.IUserData = {
             twitter: {
               id: twitterUser.profile.id,
               username: twitterUser.profile.username,
               displayName: twitterUser.profile.displayName,
               icon: twitterUser.profile.photos[0].value,
             },
+            updatedDate: currentDate,
           };
-          return firestore.saveUserData(userUuid, userData);
+          if (existUserId) {
+            return firestore.updateUserData(existUserId, userData);
+          }
+          const userUuid = uuid();
+          userData.createdDate = currentDate;
+          return firestore.createUserData(userUuid, userData);
         })
         .then((userId) => {
           if (!req.session || !req.session.seasonId) {

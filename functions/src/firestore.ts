@@ -3,6 +3,8 @@ import * as admin from "firebase-admin";
 import { v4 as uuid } from "uuid";
 
 export interface IUserData {
+  createdDate?: Date;
+  updatedDate: Date;
   twitter: {
     id: string;
     username: string;
@@ -47,18 +49,34 @@ export async function getUserIdByTwitterId(
 }
 
 /**
- * Save user data
+ * Create user data
  * @param {string} userId
  * @param {IUserData} userData
- * @return {Promise<void>}
+ * @return {Promise<string>}
  */
-export async function saveUserData(
+export async function createUserData(
   userId: string,
   userData: IUserData
 ): Promise<string> {
   const db = admin.firestore();
   const usersRef = db.collection("users");
   await usersRef.doc(userId).set(userData);
+  return userId;
+}
+
+/**
+ * Update user data
+ * @param {string} userId
+ * @param {IUserData} userData
+ * @return {Promise<string>}
+ */
+export async function updateUserData(
+  userId: string,
+  userData: IUserData
+): Promise<string> {
+  const db = admin.firestore();
+  const usersRef = db.collection("users");
+  await usersRef.doc(userId).update(userData);
   return userId;
 }
 
