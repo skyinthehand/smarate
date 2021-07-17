@@ -45,6 +45,7 @@ export interface IMatchData {
   seasonId: string;
   user0MatchData: IUserMatchData;
   user1MatchData?: IUserMatchData;
+  roomId?: string;
   createdDate: Date;
   updatedDate: Date;
   status: EMatchStatus;
@@ -280,4 +281,34 @@ export async function createMatch(
   const matchId = uuid();
   await matchsRef.doc(matchId).set(matchData);
   return matchData;
+}
+
+/**
+ * Update match room id
+ * @param {string} userId
+ * @param {string} seasonId
+ * @param {string} roomId
+ * @return {Promise<string | null>}
+ */
+export async function updateMatchRoomId(
+  userId: string,
+  seasonId: string,
+  roomId: string
+): Promise<string | null> {
+  const db = admin.firestore();
+  const matchsRef = db.collection("matchs");
+  const query1Snapshot = await matchsRef
+    .where("userId0.userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  const roomData = {
+    roomId,
+  };
+  if (query1Snapshot.docs.length <= 0) {
+    return null;
+  }
+  const doc = query1Snapshot.docs[0];
+  const matchId = doc.id;
+  await matchsRef.doc(matchId).update(roomData);
+  return matchId;
 }
