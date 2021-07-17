@@ -27,6 +27,9 @@ router.get("/", (req, res) => {
     }
 
     firestore.createMatch(userId, seasonId).then((matchData) => {
+      if (matchData === null) {
+        res.redirect("/");
+      }
       res.render("match", {
         matchData: matchData,
       });

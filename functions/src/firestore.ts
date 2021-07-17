@@ -30,6 +30,7 @@ export type EMatchResult = typeof EMatchResult[keyof typeof EMatchResult];
 export interface IUserMatchData {
   userId: string;
   reportedResult?: EMatchResult;
+  startRate: number;
   diffRate: number;
 }
 
@@ -254,11 +255,18 @@ export async function getMatchByUserIdAndSeasonId(
 export async function createMatch(
   userId: string,
   seasonId: string
-): Promise<IMatchData> {
+): Promise<IMatchData | null> {
   const db = admin.firestore();
+
+  const userSeasonData = await getUserSeasonData(userId, seasonId);
+  if (userSeasonData === null) {
+    return null;
+  }
+
   const matchsRef = db.collection("matchs");
   const userMatchData: IUserMatchData = {
     userId,
+    startRate: userSeasonData.rate,
     diffRate: 0,
   };
   const currentTime = moment.tz("Asia/Tokyo").toDate();
