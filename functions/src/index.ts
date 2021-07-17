@@ -1,10 +1,12 @@
 import * as functions from "firebase-functions";
 import * as express from "express";
 import * as passport from "passport";
-import {IStrategyOption, Strategy as TwitterStrategy} from "passport-twitter";
+import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
 import * as session from "express-session";
+import * as moment from "moment-timezone";
 
-import {router as oauth} from "./oauth";
+import * as firestore from "./firestore";
+import { router as oauth } from "./oauth";
 
 const config = functions.config();
 const twitterConfig: IStrategyOption = {
@@ -13,10 +15,10 @@ const twitterConfig: IStrategyOption = {
   callbackURL: "http://localhost:5000/oauth/callback",
 };
 const twitterStrategy = new TwitterStrategy(
-    twitterConfig,
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, {profile});
-    }
+  twitterConfig,
+  (accessToken, refreshToken, profile, done) => {
+    return done(null, { profile });
+  }
 );
 passport.use(twitterStrategy);
 passport.serializeUser((user, done) => {
@@ -31,38 +33,78 @@ declare module "express-session" {
     passport: {
       user: {
         profile: {
-          id: string,
-          username: string,
-          displayName: string,
+          id: string;
+          username: string;
+          displayName: string;
           photos: {
-            value: string,
-          }[],
-        }
-      }
-    }
+            value: string;
+          }[];
+        };
+      };
+    };
   }
 }
+
+const seasonChecker: express.Handler = (req, res, next) => {
+  const currentTime = moment().toDate();
+
+  firestore
+    .getSeasonId(currentTime)
+    .then((currentSeasonId) => {
+      if (currentSeasonId !== null) {
+        return currentSeasonId;
+      }
+      const nextSeasonStartTime = moment
+        .tz("Asia/Tokyo")
+        .subtract(5, "days")
+        .startOf("month")
+        .toDate();
+      return firestore.createSeason(nextSeasonStartTime);
+    })
+    .then((seasonId) => {
+      if (req.session) {
+        req.session.seasonId = seasonId;
+      }
+      next();
+    });
+};
+
+firestore.initialize();
 
 const app = express();
 
 app.use(passport.initialize());
 app.set("trust proxy", 1);
-app.use(session({
-  secret: "secret",
-  resave: false,
-  saveUninitialized: false,
-}));
+app.use(
+  session({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 app.set("view engine", "ejs");
 
+app.use(seasonChecker);
+
 app.get("/", (req, res) => {
-  res.render("index");
+  if (!req.session || !req.session.userId) {
+    res.render("index", {
+      userId: null,
+      seasonId: null,
+    });
+    return;
+  }
+  res.render("index", {
+    userId: req.session.userId,
+    seasonId: req.session.seasonId,
+  });
 });
 
 app.use("/oauth", oauth);
 
 app.get("/my", (req, res) => {
-  if (!req.session.passport) {
+  if (!req.session || !req.session.passport) {
     res.redirect("/");
     return;
   }
@@ -71,4 +113,4 @@ app.get("/my", (req, res) => {
   });
 });
 
-exports.app = functions.https.onRequest(app);
+exports.app = functions.region("asia-northeast1").https.onRequest(app);
