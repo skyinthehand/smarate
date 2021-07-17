@@ -25,7 +25,6 @@ router.get("/callback",
         const twitterUser = req.user as any;
 
         const usersRef = db.collection("users");
-        // eslint-disable-next-line max-len
         const getUserId = async () => {
           try {
             const querySnapshot = await
