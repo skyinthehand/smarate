@@ -14,11 +14,13 @@
     </header>
 
     <main class="px-3">
+      <% if (twitter) {%>
+      <div><%= twitter.username %>でログイン中</div>
+      <% } else { %>
       <a href="/oauth" class="btn btn-lg btn-secondary fw-bold"
         >Twitterでログイン</a
       >
-      <% if (userId) {%><%= userId %><% } %> <% if (seasonId) {%><%= seasonId
-      %><% } %>
+      <% } %>
     </main>
   </body>
 </html>

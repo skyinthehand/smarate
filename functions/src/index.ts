@@ -92,16 +92,14 @@ app.use(express.json());
 app.use(seasonChecker);
 
 app.get("/", (req, res) => {
-  if (!req.session || !req.session.userId) {
+  if (!req.session || !req.session.userId || !req.session.twitter) {
     res.render("index", {
-      userId: null,
-      seasonId: null,
+      twitter: undefined,
     });
     return;
   }
   res.render("index", {
-    userId: req.session.userId,
-    seasonId: req.session.seasonId,
+    twitter: req.session.twitter,
   });
 });
 
