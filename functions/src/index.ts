@@ -91,7 +91,7 @@ app.get("/", (req, res) => {
 app.use("/oauth", oauth);
 
 app.get("/my", (req, res) => {
-  if (!req.session.passport) {
+  if (!req.session || !req.session.passport) {
     res.redirect("/");
     return;
   }
