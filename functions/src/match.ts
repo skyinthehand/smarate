@@ -50,6 +50,14 @@ router.post("/room", (req, res) => {
   }
 
   const roomId = req.body.roomId;
+
+  const roomIdRegExp = /^[a-zA-Z0-9]{5}$/;
+
+  if (!roomIdRegExp.test(roomId)) {
+    res.redirect("/match");
+    return;
+  }
+
   const userId = req.session.userId;
   const seasonId = req.session.seasonId;
   firestore.updateMatchRoomId(userId, seasonId, roomId).then(() => {
