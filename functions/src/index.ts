@@ -3,6 +3,7 @@ import * as express from "express";
 import * as passport from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
 import * as session from "express-session";
+import * as moment from "moment-timezone";
 
 import * as firestore from "./firestore";
 import { router as oauth } from "./oauth";
@@ -44,6 +45,22 @@ declare module "express-session" {
   }
 }
 
+const seasonChecker: express.Handler = (req, res, next) => {
+  const currentTime = moment().toDate();
+
+  firestore.getSeasonId(currentTime).then((currentSeasonId) => {
+    if (!currentSeasonId) {
+      const nextSeasonStartTime = moment
+        .tz("Asia/Tokyo")
+        .subtract(5, "days")
+        .startOf("month")
+        .toDate();
+      firestore.createSeason(nextSeasonStartTime);
+    }
+    next();
+  });
+};
+
 firestore.initialize();
 
 const app = express();
@@ -59,6 +76,8 @@ app.use(
 );
 
 app.set("view engine", "ejs");
+
+app.use(seasonChecker);
 
 app.get("/", (req, res) => {
   res.render("index");

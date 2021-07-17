@@ -51,3 +51,38 @@ export async function saveUserData(
   const usersRef = db.collection("users");
   usersRef.doc(userId).set(userData);
 }
+
+/**
+ * Get season
+ * @param {Date} date
+ * @return {Promise<string | null>}
+ */
+export async function getSeasonId(date: Date): Promise<string | null> {
+  const db = admin.firestore();
+  const seasonsRef = db.collection("seasons");
+  const querySnapshot = await seasonsRef
+    .where("startDate", "<", date)
+    .orderBy("startDate", "desc")
+    .get();
+  if (querySnapshot.docs.length > 0) {
+    const doc = querySnapshot.docs[0];
+    return doc.id;
+  }
+  return null;
+}
+
+/**
+ * Create season data
+ * @param {Date} date
+ * @return {Promise<string | null>}
+ */
+export async function createSeason(date: Date): Promise<string> {
+  const db = admin.firestore();
+  const seasonsRef = db.collection("seasons");
+  const newSeasonId = (await seasonsRef.get()).size.toString();
+  const seasonData = {
+    startDate: date,
+  };
+  seasonsRef.doc(newSeasonId).set(seasonData);
+  return newSeasonId;
+}
