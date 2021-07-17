@@ -17,26 +17,35 @@
       </div>
       <div>
         <p>ルームID</p>
-        <span>ルームIDを入力してください</span>
-        <span>ルームIDを修正してください</span>
+        <% if (matchData.roomId) { %>
+        <h2 class="text-center"><%= matchData.roomId %></h2>
+        <% } %><% if (!matchData.roomId) { %>
+        <span>ルームIDを半角英数字5文字で入力してください</span>
+        <% } else { %>
+        <span>ルームIDを修正する場合は入力してください</span>
+        <% } %>
         <form
-          class="send-room-id-form"
+          class="send-room-id-form form-inline"
           action="/match/room"
           accept-charset="UTF-8"
           method="POST"
         >
-          <label for="form-room-id">ルームID</label>
-          <input
-            name="roomId"
-            type="text"
-            class="form-control"
-            id="room-ID"
-            placeholder=""
-            minlength="5"
-            maxlength="5"
-            required
-          />
-          <button type="submit" class="btn btn-lg btn-block form-submit">
+          <div class="form-group">
+            <input
+              name="roomId"
+              type="text"
+              class="form-control"
+              id="room-ID"
+              placeholder=""
+              minlength="5"
+              maxlength="5"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-lg btn-block form-submit bg-dark text-white"
+          >
             送信
           </button>
         </form>
