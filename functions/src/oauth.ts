@@ -22,8 +22,7 @@ router.get(
         .getUserIdByTwitterId(twitterUser.profile.id)
         .then((existUserId) => {
           if (!req.session) {
-            res.redirect("/");
-            return;
+            throw new Error("no session");
           }
           const currentDate = moment.tz("Asia/Tokyo").toDate();
           const twitterData = {
@@ -47,8 +46,7 @@ router.get(
         })
         .then((userId) => {
           if (!req.session || !req.session.seasonId) {
-            res.redirect("/");
-            return;
+            throw new Error("no session");
           }
           req.session.userId = userId;
           const seasonId = req.session.seasonId;
