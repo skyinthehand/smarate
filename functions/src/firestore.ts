@@ -1,6 +1,15 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
+export interface IUserData {
+  twitter: {
+    id: string;
+    username: string;
+    displayName: string;
+    icon: string;
+  };
+}
+
 /**
  * Initialize firestore
  */
@@ -31,12 +40,12 @@ export async function getUserIdByTwitterId(
 /**
  * Save user data
  * @param {string} userId
- * @param {object} userData
- * @return
+ * @param {IUserData} userData
+ * @return {Promise<void>}
  */
 export async function saveUserData(
   userId: string,
-  userData: object
+  userData: IUserData
 ): Promise<void> {
   const db = admin.firestore();
   const usersRef = db.collection("users");
