@@ -1,10 +1,10 @@
 import * as functions from "firebase-functions";
 import * as express from "express";
 import * as passport from "passport";
-import {IStrategyOption, Strategy as TwitterStrategy} from "passport-twitter";
+import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
 import * as session from "express-session";
 
-import {router as oauth} from "./oauth";
+import { router as oauth } from "./oauth";
 
 const config = functions.config();
 const twitterConfig: IStrategyOption = {
@@ -13,10 +13,10 @@ const twitterConfig: IStrategyOption = {
   callbackURL: "http://localhost:5000/oauth/callback",
 };
 const twitterStrategy = new TwitterStrategy(
-    twitterConfig,
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, {profile});
-    }
+  twitterConfig,
+  (accessToken, refreshToken, profile, done) => {
+    return done(null, { profile });
+  }
 );
 passport.use(twitterStrategy);
 passport.serializeUser((user, done) => {
@@ -31,15 +31,15 @@ declare module "express-session" {
     passport: {
       user: {
         profile: {
-          id: string,
-          username: string,
-          displayName: string,
+          id: string;
+          username: string;
+          displayName: string;
           photos: {
-            value: string,
-          }[],
-        }
-      }
-    }
+            value: string;
+          }[];
+        };
+      };
+    };
   }
 }
 
@@ -47,11 +47,13 @@ const app = express();
 
 app.use(passport.initialize());
 app.set("trust proxy", 1);
-app.use(session({
-  secret: "secret",
-  resave: false,
-  saveUninitialized: false,
-}));
+app.use(
+  session({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
 app.set("view engine", "ejs");
 
