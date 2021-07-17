@@ -5,7 +5,7 @@ import * as firestore from "./firestore";
 // eslint-disable-next-line new-cap
 export const router = express.Router();
 
-router.get("/", (req, res) => {
+router.get("/", (req, res, next) => {
   if (
     !req.session ||
     !req.session.passport ||
@@ -18,24 +18,39 @@ router.get("/", (req, res) => {
 
   const userId = req.session.userId;
   const seasonId = req.session.seasonId;
-  firestore.getMatchByUserIdAndSeasonId(userId, seasonId).then((matchData) => {
-    if (matchData !== null) {
-      res.render("match/index", {
-        matchData: matchData,
-      });
-      return;
-    }
-
-    firestore.createMatch(userId, seasonId).then((matchData) => {
-      if (matchData === null) {
-        res.redirect("/");
+  firestore
+    .getMatchByUserIdAndSeasonId(userId, seasonId)
+    .then((matchData) => {
+      if (!req.session) {
+        throw new Error("no session");
       }
-      res.render("match/index", {
-        matchData: matchData,
+      if (matchData !== null) {
+        res.render("match/index", {
+          twitterData: req.session.twitter,
+          matchData: matchData,
+        });
+        return;
+      }
+
+      firestore.createMatch(userId, seasonId).then((matchData) => {
+        if (matchData === null) {
+          throw new Error("no match data");
+        }
+        if (!req.session) {
+          throw new Error("no session");
+        }
+        res.render("match/index", {
+          twitterData: req.session.twitter,
+          matchData: matchData,
+        });
+        return;
       });
-      return;
+    })
+    .catch((err) => {
+      if (next) {
+        next(err);
+      }
     });
-  });
 });
 
 router.post("/room", (req, res) => {
@@ -61,6 +76,6 @@ router.post("/room", (req, res) => {
   const userId = req.session.userId;
   const seasonId = req.session.seasonId;
   firestore.updateMatchRoomId(userId, seasonId, roomId).then(() => {
-    res.redirect("/match/index");
+    res.redirect("/match");
   });
 });
