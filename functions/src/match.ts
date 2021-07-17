@@ -26,12 +26,11 @@ router.get("/", (req, res, next) => {
       }
       if (matchData !== null) {
         res.render("match/index", {
-          twitterData: req.session.twitter,
+          user0TwitterData: req.session.twitter,
           matchData: matchData,
         });
         return;
       }
-
       firestore.createMatch(userId, seasonId).then((matchData) => {
         if (matchData === null) {
           throw new Error("no match data");
@@ -40,7 +39,7 @@ router.get("/", (req, res, next) => {
           throw new Error("no session");
         }
         res.render("match/index", {
-          twitterData: req.session.twitter,
+          user0TwitterData: req.session.twitter,
           matchData: matchData,
         });
         return;

@@ -52,12 +52,12 @@
       </div>
       <div class="row">
         <div class="col-md-6">
-          <%- include('./_partials/player', {twitterData: twitterData}) %>
+          <%- include('./_partials/player', {twitterData: user0TwitterData}) %>
         </div>
         <div class="col-md-6">
           <% if (matchData.user1MatchData) { %> <%-
-          include('./_partials/player', {twitterData: opponentTwitterData}) %>
-          <% } %>
+          include('./_partials/player', {twitterData: user1TwitterData}) %> <% }
+          %>
         </div>
       </div>
     </main>
