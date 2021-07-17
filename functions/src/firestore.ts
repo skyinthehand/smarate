@@ -1,5 +1,6 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { v4 as uuid } from "uuid";
 
 export interface IUserData {
   twitter: {
@@ -9,6 +10,14 @@ export interface IUserData {
     icon: string;
   };
 }
+
+export interface IUserSeasonData {
+  userId: string;
+  seasonId: string;
+  rate: number;
+}
+
+export const INITIAL_RATE = 1500;
 
 /**
  * Initialize firestore
@@ -86,4 +95,49 @@ export async function createSeason(date: Date): Promise<string> {
   };
   seasonsRef.doc(newSeasonId).set(seasonData);
   return newSeasonId;
+}
+
+/**
+ * Get user season id
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<string | null>}
+ */
+export async function getUserSeasonId(
+  userId: string,
+  seasonId: string
+): Promise<string | null> {
+  const db = admin.firestore();
+  const userSeasonsRef = db.collection("userSeasons");
+  const querySnapshot = await userSeasonsRef
+    .where("userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  if (querySnapshot.docs.length > 0) {
+    const doc = querySnapshot.docs[0];
+    return doc.id;
+  }
+  return null;
+}
+
+/**
+ * Create user season data
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<string | null>}
+ */
+export async function createUserSeason(
+  userId: string,
+  seasonId: string
+): Promise<string> {
+  const userSeasonId = uuid();
+  const db = admin.firestore();
+  const userSeasonsRef = db.collection("userSeasons");
+  const userSeasonData: IUserSeasonData = {
+    userId,
+    seasonId,
+    rate: INITIAL_RATE,
+  };
+  await userSeasonsRef.doc(userSeasonId).set(userSeasonData);
+  return userSeasonId;
 }

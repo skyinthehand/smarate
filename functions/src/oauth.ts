@@ -32,9 +32,25 @@ router.get(
           return firestore.saveUserData(userUuid, userData);
         })
         .then((userId) => {
-          if (req.session) {
-            req.session.userId = userId;
+          if (!req.session || !req.session.seasonId) {
+            res.redirect("/");
+            return;
           }
+          req.session.userId = userId;
+          const seasonId = req.session.seasonId;
+          firestore.getUserSeasonId(userId, seasonId).then((userSeasonId) => {
+            if (userSeasonId) {
+              return userSeasonId;
+            }
+            return firestore.createUserSeason(userId, seasonId);
+          });
+        })
+        .then((userSeasonId) => {
+          if (!req.session) {
+            res.redirect("/");
+            return;
+          }
+          req.session.userSeasonId = userSeasonId;
           res.redirect("/my");
         })
         .catch((err) => {
