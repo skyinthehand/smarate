@@ -62,6 +62,17 @@ export function initialize(): void {
 }
 
 /**
+ * Get user data
+ * @param {string} userId
+ * @return {Promise<IUserData | null>}
+ */
+export async function getUserData(userId: string): Promise<IUserData | null> {
+  const db = admin.firestore();
+  const usersRef = db.collection("users");
+  return (await usersRef.doc(userId).get()).data() as IUserData;
+}
+
+/**
  * Get exist user id
  * @param {string} twitterId
  * @return {Promise<string | null>}
