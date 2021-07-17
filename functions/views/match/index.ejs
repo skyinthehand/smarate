@@ -5,6 +5,16 @@
     <%- include('../_partials/header', {currentPage: 'match'}) %>
 
     <main class="px-3">
+      <div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">対戦状態</h1>
+        <p class="lead">
+          <% if (matchData.status < 0) { %> 対戦中止 <% } else if
+          (matchData.status === 1) { %> 対戦終了 <% } else { if
+          (!matchData.roomId) { %> 部屋ID入力待ち <% } else if
+          (!matchData.user1MatchData) { %> マッチング待ち <% } else { %> 対戦中
+          <% } }%>
+        </p>
+      </div>
       <div>
         <p>ルームID</p>
         <span>ルームIDを入力してください</span>
