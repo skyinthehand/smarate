@@ -20,7 +20,7 @@ router.get("/", (req, res) => {
   const seasonId = req.session.seasonId;
   firestore.getMatchByUserIdAndSeasonId(userId, seasonId).then((matchData) => {
     if (matchData !== null) {
-      res.render("match", {
+      res.render("match/index", {
         matchData: matchData,
       });
       return;
@@ -30,7 +30,7 @@ router.get("/", (req, res) => {
       if (matchData === null) {
         res.redirect("/");
       }
-      res.render("match", {
+      res.render("match/index", {
         matchData: matchData,
       });
       return;
@@ -53,6 +53,6 @@ router.post("/room", (req, res) => {
   const userId = req.session.userId;
   const seasonId = req.session.seasonId;
   firestore.updateMatchRoomId(userId, seasonId, roomId).then(() => {
-    res.redirect("/match");
+    res.redirect("/match/index");
   });
 });
