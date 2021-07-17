@@ -19,6 +19,21 @@ router.get("/", (req, res, next) => {
   const userId = req.session.userId;
   const seasonId = req.session.seasonId;
 
+  const getMatchData = async (
+    userId: string,
+    seasonId: string
+  ): Promise<firestore.IMatchData | null> => {
+    const matchData = await firestore.getMatchByUserIdAndSeasonId(
+      userId,
+      seasonId
+    );
+    if (matchData) {
+      return matchData;
+    }
+    const newMatchData = await firestore.createMatch(userId, seasonId);
+    return newMatchData;
+  };
+
   const convertMatchDataToRender = async (matchData: firestore.IMatchData) => {
     const user0Data = await firestore.getUserData(
       matchData.user0MatchData.userId
@@ -45,24 +60,13 @@ router.get("/", (req, res, next) => {
     };
   };
 
-  firestore
-    .getMatchByUserIdAndSeasonId(userId, seasonId)
+  getMatchData(userId, seasonId)
     .then((matchData) => {
-      if (!req.session) {
-        throw new Error("no session");
+      if (matchData === null) {
+        throw new Error("failed to create match data");
       }
-      if (matchData !== null) {
-        convertMatchDataToRender(matchData).then((renderData) => {
-          res.render("match/index", renderData);
-        });
-      }
-      firestore.createMatch(userId, seasonId).then((matchData) => {
-        if (matchData === null) {
-          throw new Error("failed to create match data");
-        }
-        convertMatchDataToRender(matchData).then((renderData) => {
-          res.render("match/index", renderData);
-        });
+      convertMatchDataToRender(matchData).then((renderData) => {
+        res.render("match/index", renderData);
       });
     })
     .catch((err) => {
