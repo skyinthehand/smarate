@@ -49,6 +49,7 @@ export interface IMatchData {
   createdDate: Date;
   updatedDate: Date;
   status: EMatchStatus;
+  resetCount: number;
 }
 
 export const INITIAL_RATE = 1500;
@@ -277,6 +278,7 @@ export async function createMatch(
     createdDate: currentTime,
     updatedDate: currentTime,
     status: EMatchStatus.Progress,
+    resetCount: 0,
   };
   const matchId = uuid();
   await matchsRef.doc(matchId).set(matchData);
