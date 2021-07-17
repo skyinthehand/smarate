@@ -37,3 +37,22 @@ router.get("/", (req, res) => {
     });
   });
 });
+
+router.post("/room", (req, res) => {
+  if (
+    !req.session ||
+    !req.session.passport ||
+    !req.session.userId ||
+    !req.session.seasonId
+  ) {
+    res.redirect("/");
+    return;
+  }
+
+  const roomId = req.body.roomId;
+  const userId = req.session.userId;
+  const seasonId = req.session.seasonId;
+  firestore.updateMatchRoomId(userId, seasonId, roomId).then(() => {
+    res.redirect("/match");
+  });
+});
