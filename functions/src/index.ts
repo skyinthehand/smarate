@@ -7,6 +7,7 @@ import * as moment from "moment-timezone";
 
 import * as firestore from "./firestore";
 import { router as oauth } from "./oauth";
+import { router as match } from "./match";
 
 const config = functions.config();
 const twitterConfig: IStrategyOption = {
@@ -112,5 +113,7 @@ app.get("/my", (req, res) => {
     user: req.session.passport.user,
   });
 });
+
+app.use("/match", match);
 
 exports.app = functions.region("asia-northeast1").https.onRequest(app);
