@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <%- include('../_partials/head') %>
+  <body>
+    <%- include('../_partials/header', {currentPage: 'my'}) %>
+
+    <main class="px-3">
+      <div>
+        <div><%= user.profile.username %></div>
+        <div><%= user.profile.displayName %></div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -7,6 +7,7 @@ import * as moment from "moment-timezone";
 
 import * as firestore from "./firestore";
 import { router as oauth } from "./oauth";
+import { router as match } from "./match";
 
 const config = functions.config();
 const twitterConfig: IStrategyOption = {
@@ -85,19 +86,20 @@ app.use(
 
 app.set("view engine", "ejs");
 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 app.use(seasonChecker);
 
 app.get("/", (req, res) => {
-  if (!req.session || !req.session.userId) {
+  if (!req.session || !req.session.userId || !req.session.twitter) {
     res.render("index", {
-      userId: null,
-      seasonId: null,
+      twitter: undefined,
     });
     return;
   }
   res.render("index", {
-    userId: req.session.userId,
-    seasonId: req.session.seasonId,
+    twitter: req.session.twitter,
   });
 });
 
@@ -108,9 +110,11 @@ app.get("/my", (req, res) => {
     res.redirect("/");
     return;
   }
-  res.render("my", {
+  res.render("my/index", {
     user: req.session.passport.user,
   });
 });
+
+app.use("/match", match);
 
 exports.app = functions.region("asia-northeast1").https.onRequest(app);

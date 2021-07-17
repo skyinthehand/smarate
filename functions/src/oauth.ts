@@ -1,6 +1,7 @@
 import * as express from "express";
 import * as passport from "passport";
 import { v4 as uuid } from "uuid";
+import * as moment from "moment-timezone";
 
 import * as firestore from "./firestore";
 
@@ -20,21 +21,32 @@ router.get(
       firestore
         .getUserIdByTwitterId(twitterUser.profile.id)
         .then((existUserId) => {
-          const userUuid = existUserId ?? uuid();
-          const userData = {
-            twitter: {
-              id: twitterUser.profile.id,
-              username: twitterUser.profile.username,
-              displayName: twitterUser.profile.displayName,
-              icon: twitterUser.profile.photos[0].value,
-            },
+          if (!req.session) {
+            throw new Error("no session");
+          }
+          const currentDate = moment.tz("Asia/Tokyo").toDate();
+          const twitterData = {
+            id: twitterUser.profile.id,
+            username: twitterUser.profile.username,
+            displayName: twitterUser.profile.displayName,
+            icon: twitterUser.profile.photos[0].value,
           };
-          return firestore.saveUserData(userUuid, userData);
+
+          const userData: firestore.IUserData = {
+            twitter: twitterData,
+            updatedDate: currentDate,
+          };
+          req.session.twitter = twitterData;
+          if (existUserId) {
+            return firestore.updateUserData(existUserId, userData);
+          }
+          const userUuid = uuid();
+          userData.createdDate = currentDate;
+          return firestore.createUserData(userUuid, userData);
         })
         .then((userId) => {
           if (!req.session || !req.session.seasonId) {
-            res.redirect("/");
-            return;
+            throw new Error("no session");
           }
           req.session.userId = userId;
           const seasonId = req.session.seasonId;

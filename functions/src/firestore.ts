@@ -1,8 +1,11 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { v4 as uuid } from "uuid";
+import * as moment from "moment-timezone";
 
 export interface IUserData {
+  createdDate?: Date;
+  updatedDate: Date;
   twitter: {
     id: string;
     username: string;
@@ -17,6 +20,40 @@ export interface IUserSeasonData {
   rate: number;
 }
 
+const EMatchResult = {
+  Win: 1,
+  Lose: 0,
+  Cancel: -1,
+};
+export type EMatchResult = typeof EMatchResult[keyof typeof EMatchResult];
+
+export interface IUserMatchData {
+  userId: string;
+  reportedResult?: EMatchResult;
+  startRate: number;
+  diffRate: number;
+}
+
+const EMatchStatus = {
+  Completion: 1,
+  New: 0,
+  Cancel: -1,
+  Wait: 2,
+  Progress: 3,
+};
+export type EMatchStatus = typeof EMatchStatus[keyof typeof EMatchStatus];
+
+export interface IMatchData {
+  seasonId: string;
+  user0MatchData: IUserMatchData;
+  user1MatchData?: IUserMatchData;
+  roomId?: string;
+  createdDate: Date;
+  updatedDate: Date;
+  status: EMatchStatus;
+  resetCount: number;
+}
+
 export const INITIAL_RATE = 1500;
 
 /**
@@ -24,6 +61,17 @@ export const INITIAL_RATE = 1500;
  */
 export function initialize(): void {
   admin.initializeApp(functions.config().firebase);
+}
+
+/**
+ * Get user data
+ * @param {string} userId
+ * @return {Promise<IUserData | null>}
+ */
+export async function getUserData(userId: string): Promise<IUserData | null> {
+  const db = admin.firestore();
+  const usersRef = db.collection("users");
+  return (await usersRef.doc(userId).get()).data() as IUserData;
 }
 
 /**
@@ -47,18 +95,34 @@ export async function getUserIdByTwitterId(
 }
 
 /**
- * Save user data
+ * Create user data
  * @param {string} userId
  * @param {IUserData} userData
- * @return {Promise<void>}
+ * @return {Promise<string>}
  */
-export async function saveUserData(
+export async function createUserData(
   userId: string,
   userData: IUserData
 ): Promise<string> {
   const db = admin.firestore();
   const usersRef = db.collection("users");
   await usersRef.doc(userId).set(userData);
+  return userId;
+}
+
+/**
+ * Update user data
+ * @param {string} userId
+ * @param {IUserData} userData
+ * @return {Promise<string>}
+ */
+export async function updateUserData(
+  userId: string,
+  userData: IUserData
+): Promise<string> {
+  const db = admin.firestore();
+  const usersRef = db.collection("users");
+  await usersRef.doc(userId).update(userData);
   return userId;
 }
 
@@ -121,6 +185,29 @@ export async function getUserSeasonId(
 }
 
 /**
+ * Get user season data
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<IUserSeasonData | null>}
+ */
+export async function getUserSeasonData(
+  userId: string,
+  seasonId: string
+): Promise<IUserSeasonData | null> {
+  const db = admin.firestore();
+  const userSeasonsRef = db.collection("userSeasons");
+  const querySnapshot = await userSeasonsRef
+    .where("userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  if (querySnapshot.docs.length > 0) {
+    const doc = querySnapshot.docs[0];
+    return doc.data() as IUserSeasonData;
+  }
+  return null;
+}
+
+/**
  * Create user season data
  * @param {string} userId
  * @param {string} seasonId
@@ -140,4 +227,191 @@ export async function createUserSeason(
   };
   await userSeasonsRef.doc(userSeasonId).set(userSeasonData);
   return userSeasonId;
+}
+
+/**
+ * Get match data
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<IMatchData | null>}
+ */
+export async function getMatchByUserIdAndSeasonId(
+  userId: string,
+  seasonId: string
+): Promise<IMatchData | null> {
+  const db = admin.firestore();
+  const matchsRef = db.collection("matchs");
+  const query1Snapshot = await matchsRef
+    .where("user0MatchData.userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  if (query1Snapshot.docs.length > 0) {
+    const doc = query1Snapshot.docs[0];
+    return doc.data() as IMatchData;
+  }
+  const query2Snapshot = await matchsRef
+    .where("user1MatchData.userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  if (query2Snapshot.docs.length > 0) {
+    const doc = query2Snapshot.docs[0];
+    return doc.data() as IMatchData;
+  }
+  return null;
+}
+
+/**
+ * Create match data
+ * @param {string} userId
+ * @param {string} seasonId
+ * @param {Date} date
+ * @return {Promise<string | null>}
+ */
+export async function createMatch(
+  userId: string,
+  seasonId: string
+): Promise<IMatchData | null> {
+  const db = admin.firestore();
+
+  const userSeasonData = await getUserSeasonData(userId, seasonId);
+  if (userSeasonData === null) {
+    return null;
+  }
+
+  const matchsRef = db.collection("matchs");
+  const userMatchData: IUserMatchData = {
+    userId,
+    startRate: userSeasonData.rate,
+    diffRate: 0,
+  };
+  const currentTime = moment.tz("Asia/Tokyo").toDate();
+  const matchData: IMatchData = {
+    seasonId,
+    user0MatchData: userMatchData,
+    createdDate: currentTime,
+    updatedDate: currentTime,
+    status: EMatchStatus.New,
+    resetCount: 0,
+  };
+  const matchId = uuid();
+  await matchsRef.doc(matchId).set(matchData);
+  return matchData;
+}
+
+/**
+ * Update match room id
+ * @param {string} userId
+ * @param {string} seasonId
+ * @param {string} roomId
+ * @return {Promise<string | null>}
+ */
+export async function updateMatchRoomId(
+  userId: string,
+  seasonId: string,
+  roomId: string
+): Promise<string | null> {
+  const db = admin.firestore();
+  const matchsRef = db.collection("matchs");
+  const query1Snapshot = await matchsRef
+    .where("user0MatchData.userId", "==", userId)
+    .where("seasonId", "==", seasonId)
+    .get();
+  const currentTime = moment.tz("Asia/Tokyo").toDate();
+  const roomData = {
+    roomId,
+    updatedDate: currentTime,
+    status: EMatchStatus.Wait,
+  };
+  if (query1Snapshot.docs.length <= 0) {
+    return null;
+  }
+  const doc = query1Snapshot.docs[0];
+  const matchId = doc.id;
+  await matchsRef.doc(matchId).update(roomData);
+  return matchId;
+}
+
+/**
+ * Assign match
+ * TODO: リファクタ
+ *
+ * @param {string} userId
+ * @param {string} seasonId
+ * @return {Promise<IMatchData | null>}
+ */
+export async function assignMatchByUserIdAndSeasonId(
+  userId: string,
+  seasonId: string
+): Promise<IMatchData | null> {
+  const userSeasonData = await getUserSeasonData(userId, seasonId);
+  if (!userSeasonData) {
+    return null;
+  }
+  const userSeasonRate = userSeasonData.rate;
+  const db = admin.firestore();
+  const matchsRef = db.collection("matchs");
+
+  let matchData1Doc = null;
+  const query1Snapshot = await matchsRef
+    .where("seasonId", "==", seasonId)
+    .where("status", "==", EMatchStatus.Wait)
+    .where("user0MatchData.startRate", "<=", userSeasonRate + 100)
+    .get();
+  if (query1Snapshot.docs.length > 0) {
+    const doc = query1Snapshot.docs[0];
+    const matchData = doc.data() as IMatchData;
+    if (!matchData.user1MatchData && matchData.roomId) {
+      matchData1Doc = doc;
+    }
+  }
+
+  let matchData2Doc = null;
+  const query2Snapshot = await matchsRef
+    .where("seasonId", "==", seasonId)
+    .where("status", "==", EMatchStatus.Wait)
+    .where("user0MatchData.startRate", ">", userSeasonRate - 100)
+    .get();
+  if (query2Snapshot.docs.length > 0) {
+    const doc = query2Snapshot.docs[0];
+    const matchData = doc.data() as IMatchData;
+    if (!matchData.user1MatchData && matchData.roomId) {
+      matchData2Doc = doc;
+    }
+  }
+
+  let targetMatchDataDoc = null;
+  if (!matchData1Doc) {
+    targetMatchDataDoc = matchData2Doc;
+  } else if (!matchData2Doc) {
+    targetMatchDataDoc = matchData1Doc;
+  } else {
+    const matchData1 = matchData1Doc.data() as IMatchData;
+    const matchData2 = matchData2Doc.data() as IMatchData;
+    if (
+      matchData1.user0MatchData.startRate - userSeasonRate <
+      userSeasonRate - matchData2.user0MatchData.startRate
+    ) {
+      targetMatchDataDoc = matchData1Doc;
+    } else {
+      targetMatchDataDoc = matchData2Doc;
+    }
+  }
+
+  if (targetMatchDataDoc) {
+    const user1MatchData: IUserMatchData = {
+      userId,
+      startRate: userSeasonData.rate,
+      diffRate: 0,
+    };
+    const currentTime = moment.tz("Asia/Tokyo").toDate();
+    const matchData = {
+      user1MatchData,
+      updatedDate: currentTime,
+      status: EMatchStatus.Progress,
+    };
+    await matchsRef.doc(targetMatchDataDoc.id).update(matchData);
+    return getMatchByUserIdAndSeasonId(userId, seasonId);
+  }
+
+  return null;
 }

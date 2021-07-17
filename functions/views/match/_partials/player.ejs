@@ -1,0 +1,11 @@
+<div class="me-md-3 pt-3 px-3 pt-md-5 px-md-5">
+  <div class="my-3 py-3">
+    <h2 class="display-5">
+      <%- include('../../_partials/twitterIcon', {iconUrl: twitterData.icon}) %>
+      <%= twitterData.displayName %>
+    </h2>
+    <p class="lead">レート <%= rate %></p>
+  </div>
+  <%- include('../../_partials/twitterTimeline', {twitterUsername:
+  twitterData.username}) %>
+</div>

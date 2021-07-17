@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <%- include('../_partials/head') %>
+  <body>
+    <%- include('../_partials/header', {currentPage: 'match'}) %>
+
+    <main class="px-3">
+      <div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">対戦状態</h1>
+        <p class="lead">
+          <% if (matchData.status < 0) { %> 対戦中止 <% } else if
+          (matchData.status === 1) { %> 対戦終了 <% } else { if
+          (matchData.status === 0) { %> 部屋ID入力待ち <% } else if
+          (matchData.status === 2) { %> マッチング待ち <% } else { %> 対戦中 <%
+          } }%>
+        </p>
+      </div>
+      <div>
+        <p>ルームID</p>
+        <% if (matchData.roomId) { %>
+        <h2 class="text-center"><%= matchData.roomId %></h2>
+        <% } %><% if (!matchData.roomId) { %>
+        <span>ルームIDを半角英数字5文字で入力してください</span>
+        <% } else { %>
+        <span>ルームIDを修正する場合は入力してください</span>
+        <% } %>
+        <form
+          class="send-room-id-form form-inline"
+          action="/match/room"
+          accept-charset="UTF-8"
+          method="POST"
+        >
+          <div class="form-group">
+            <input
+              name="roomId"
+              type="text"
+              class="form-control"
+              id="room-ID"
+              placeholder=""
+              minlength="5"
+              maxlength="5"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-lg btn-block form-submit bg-dark text-white"
+          >
+            送信
+          </button>
+        </form>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <%- include('./_partials/player', {twitterData: user0TwitterData,
+          rate: matchData.user0MatchData.startRate}) %>
+        </div>
+        <div class="col-md-6">
+          <% if (matchData.user1MatchData) { %> <%-
+          include('./_partials/player', {twitterData: user1TwitterData, rate:
+          matchData.user0MatchData.startRate}) %> <% } %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
