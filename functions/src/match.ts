@@ -25,6 +25,28 @@ router.get("/", (req, res, next) => {
         throw new Error("no session");
       }
       if (matchData !== null) {
+        if (matchData.user1MatchData) {
+          firestore
+            .getUserData(matchData.user1MatchData.userId)
+            .then((user1Data) => {
+              firestore
+                .getUserData(matchData.user0MatchData.userId)
+                .then((user0Data) => {
+                  if (!req.session) {
+                    throw new Error("no session");
+                  }
+                  if (!user0Data || !user1Data) {
+                    throw new Error("no opponent user data");
+                  }
+                  res.render("match/index", {
+                    user0TwitterData: user0Data.twitter,
+                    user1TwitterData: user1Data.twitter,
+                    matchData: matchData,
+                  });
+                });
+            });
+        }
+
         res.render("match/index", {
           user0TwitterData: req.session.twitter,
           matchData: matchData,
