@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions";
 import * as express from "express";
 import axios from "axios";
+import * as moment from "moment-timezone";
 
 const config = functions.config();
 const smashggAuthToken = config.smashgg.authtoken as string;
@@ -147,7 +148,9 @@ router.get("/", (req, res) => {
           id
           name
           tournament {
+            id
             name
+            endAt
           }
           standings(query: {
             perPage: 128,
@@ -181,6 +184,7 @@ router.get("/", (req, res) => {
       }
     );
     const tournamentName = standingsRes.data.data.event.tournament.name;
+    const endAt = standingsRes.data.data.event.tournament.endAt;
     const eventName = standingsRes.data.data.event.name;
     const standings = standingsRes.data.data.event.standings.nodes;
     return standings
@@ -188,7 +192,7 @@ router.get("/", (req, res) => {
         return standing.entrant.participants[0].player.user;
       })
       .map((standing: IStanding) => {
-        const point = placementToPoint[standing.placement];
+        const point = placementToGradientPoint(standing.placement);
         return {
           id: standing.entrant.participants[0].player.user.id,
           name: standing.entrant.name,
@@ -198,6 +202,19 @@ router.get("/", (req, res) => {
           eventName: eventName,
         };
       });
+
+    /**
+     * 順位をポイントに変換
+     * @param {number} placement
+     * @return {number}
+     */
+    function placementToGradientPoint(placement: number): number {
+      const originalPoint = placementToPoint[placement];
+      const oldGradient =
+        (moment.tz("Asia/Tokyo").startOf("day").unix() - endAt) /
+        (365 * 24 * 60 * 60);
+      return Math.round(originalPoint * Math.pow(Math.E, -oldGradient));
+    }
   }
 
   /**
