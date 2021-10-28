@@ -86,7 +86,7 @@ export interface IPlayerRank {
 
 export type IJprData = Required<IPlayerRank>[];
 
-router.get("/", (req, res) => {
+router.get("/:dateStr?", (req, res) => {
   renderJpr();
 
   /**
@@ -119,6 +119,10 @@ router.get("/", (req, res) => {
      * @return {Moment}
      */
     function getBaseDate(): Moment {
+      const dateStr = req.params.dateStr;
+      if (dateStr) {
+        return moment(dateStr).tz("Asia/Tokyo").startOf("day");
+      }
       return moment.tz("Asia/Tokyo").startOf("day");
     }
   }
@@ -129,10 +133,12 @@ router.get("/", (req, res) => {
    */
   async function getEvents(baseDate: Moment): Promise<IEvent[]> {
     const afterDate = getAfterDateThreshold(baseDate);
+    const beforeDate = baseDate.unix();
     const eventRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
       {
-        query: `query TournamentsByCountry ($afterDate: Timestamp!) {
+        query: `query TournamentsByCountry
+        ($afterDate: Timestamp!, $beforeDate: Timestamp!) {
           tournaments(query: {
             perPage: 100
             page: 1
@@ -140,6 +146,7 @@ router.get("/", (req, res) => {
               countryCode: "JP"
               past: true
               afterDate: $afterDate
+              beforeDate: $beforeDate
               videogameIds: [
                 1386
               ]
@@ -160,6 +167,7 @@ router.get("/", (req, res) => {
         }`,
         variables: {
           afterDate,
+          beforeDate,
         },
       },
       {
