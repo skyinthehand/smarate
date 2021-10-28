@@ -98,7 +98,8 @@ router.get("/:dateStr?", (req, res) => {
    * JPRのレンダリング
    */
   async function renderJpr() {
-    const jpr = await getJpr();
+    const baseDate = getBaseDate();
+    const jpr = await getJpr(baseDate);
 
     res.render("jpr/index", {
       jpr,
@@ -107,11 +108,23 @@ router.get("/:dateStr?", (req, res) => {
   }
 
   /**
+   * 算出基準時間の取得
+   * @return {Moment}
+   */
+  function getBaseDate(): Moment {
+    const dateStr = req.params.dateStr;
+    if (dateStr) {
+      return moment(dateStr).tz("Asia/Tokyo").startOf("day");
+    }
+    return moment.tz("Asia/Tokyo").startOf("day");
+  }
+
+  /**
    * キャッシュもしくは生成してjprDataを取得
+   * @param {Moment} baseDate
    * @return {Promise<IJprData>}
    */
-  async function getJpr(): Promise<IJprData> {
-    const baseDate = getBaseDate();
+  async function getJpr(baseDate: Moment): Promise<IJprData> {
     const cachedJprData = await jprFirestore.getJprData(baseDate);
     if (cachedJprData) {
       return cachedJprData;
@@ -119,18 +132,6 @@ router.get("/:dateStr?", (req, res) => {
     const jprData = await createJprData(baseDate);
     await jprFirestore.setJprData(baseDate, jprData);
     return jprData;
-
-    /**
-     * 算出基準時間の取得
-     * @return {Moment}
-     */
-    function getBaseDate(): Moment {
-      const dateStr = req.params.dateStr;
-      if (dateStr) {
-        return moment(dateStr).tz("Asia/Tokyo").startOf("day");
-      }
-      return moment.tz("Asia/Tokyo").startOf("day");
-    }
   }
 
   /**
