@@ -92,11 +92,12 @@ router.get("/", (req, res) => {
       {
         query: `query TournamentsByCountry {
           tournaments(query: {
-            perPage: 10
+            perPage: 100
             page: 1
             filter: {
               countryCode: "JP"
               past: true
+              afterDate: 1633014000
               videogameIds: [
                 1386
               ]
@@ -148,7 +149,7 @@ router.get("/", (req, res) => {
             name
           }
           standings(query: {
-            perPage: 12,
+            perPage: 128,
             page: 1
           }){
             nodes {
