@@ -61,7 +61,7 @@ interface ITournament {
   id: string;
   name: string;
   endAt: number;
-  events: IEvent[];
+  events?: IEvent[];
 }
 
 interface IConvertedStanding {
@@ -123,7 +123,8 @@ router.get("/", (req, res) => {
         },
       }
     );
-    const tournaments: ITournament[] = eventRes.data.data.tournaments.nodes;
+    const tournaments: Required<ITournament>[] =
+      eventRes.data.data.tournaments.nodes;
     return tournaments
       .map((tournament) => {
         return tournament.events;
