@@ -94,16 +94,20 @@ app.use(express.json());
 app.use(seasonChecker);
 
 app.get("/", (req, res) => {
-  if (!req.session || !req.session.userId || !req.session.twitter) {
-    res.render("index", {
-      twitter: undefined,
-    });
-    return;
-  }
-  res.render("index", {
-    twitter: req.session.twitter,
-  });
+  res.render("jpr_index");
 });
+
+// app.get("/", (req, res) => {
+//   if (!req.session || !req.session.userId || !req.session.twitter) {
+//     res.render("index", {
+//       twitter: undefined,
+//     });
+//     return;
+//   }
+//   res.render("index", {
+//     twitter: req.session.twitter,
+//   });
+// });
 
 app.get("/jpr", (req, res) => {
   getJpr();
@@ -165,4 +169,4 @@ app.get("/my", (req, res) => {
 
 app.use("/match", match);
 
-exports.app = functions.region("asia-northeast1").https.onRequest(app);
+exports.app = functions.https.onRequest(app);
