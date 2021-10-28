@@ -226,11 +226,30 @@ router.get("/", (req, res) => {
      * @return {number}
      */
     function placementToGradientPoint(placement: number): number {
-      const originalPoint = placementToPoint[placement];
+      const originalPoint = getPointFromPlacement(placement);
       const oldGradient =
         (moment.tz("Asia/Tokyo").startOf("day").unix() - endAt) /
         (365 * 24 * 60 * 60);
       return Math.round(originalPoint * Math.pow(Math.E, -oldGradient));
+    }
+
+    /**
+     * 順位以下で最大のポイントを取得
+     * @param {number} placement
+     * @return {number}
+     */
+    function getPointFromPlacement(placement: number): number {
+      const underStandingPoints = Object.entries(placementToPoint)
+        .filter(([key]) => {
+          return Number.parseInt(key) >= placement;
+        })
+        .sort((a, b) => {
+          return -(a[1] - b[1]);
+        });
+      if (underStandingPoints.length < 1) {
+        return 0;
+      }
+      return underStandingPoints[0][1];
     }
   }
 
