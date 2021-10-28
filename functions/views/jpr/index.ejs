@@ -6,13 +6,13 @@
       <% jpr.forEach(function (pr, index) { %>
       <div class="card">
         <h5 class="card-title">
-          <%= index + 1 %> <%= pr.name %> <%= pr.point %>
+          <%= index + 1 %> <%= pr.name %> <%= Math.round(pr.point) %>
         </h5>
         <ul class="list-group list-group-flush">
           <% for (var standing of pr.standings) { %>
           <li class="list-group-item">
             <%= standing.placement %> <%= standing.tournamentName %> <%=
-            standing.point %>
+            Math.round(standing.point) %>
           </li>
           <% } %>
         </ul>

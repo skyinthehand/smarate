@@ -230,7 +230,7 @@ router.get("/", (req, res) => {
       const oldGradient =
         (moment.tz("Asia/Tokyo").startOf("day").unix() - endAt) /
         (365 * 24 * 60 * 60);
-      return Math.round(originalPoint * Math.pow(Math.E, -oldGradient));
+      return originalPoint * Math.pow(Math.E, -oldGradient);
     }
 
     /**
