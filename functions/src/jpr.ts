@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as express from "express";
 import axios from "axios";
 import * as moment from "moment-timezone";
+import { Moment } from "moment";
 
 import * as jprFirestore from "./firestore_jpr";
 
@@ -104,21 +105,30 @@ router.get("/", (req, res) => {
    * @return {Promise<IJprData>}
    */
   async function getJpr(): Promise<IJprData> {
-    const todayMoment = moment.tz("Asia/Tokyo").startOf("day");
-    const cachedJprData = await jprFirestore.getJprData(todayMoment);
+    const baseDate = getBaseDate();
+    const cachedJprData = await jprFirestore.getJprData(baseDate);
     if (cachedJprData) {
       return cachedJprData;
     }
-    const jprData = await createJprData();
-    await jprFirestore.setJprData(todayMoment, jprData);
+    const jprData = await createJprData(baseDate);
+    await jprFirestore.setJprData(baseDate, jprData);
     return jprData;
+
+    /**
+     * 算出基準時間の取得
+     * @return {Moment}
+     */
+    function getBaseDate(): Moment {
+      return moment.tz("Asia/Tokyo").startOf("day");
+    }
   }
 
   /**
    * 対象のevent取得
+   * @param {Moment} baseDate
    */
-  async function getEvents(): Promise<IEvent[]> {
-    const afterDate = getAfterDateThreshold();
+  async function getEvents(baseDate: Moment): Promise<IEvent[]> {
+    const afterDate = getAfterDateThreshold(baseDate);
     const eventRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
       {
@@ -168,30 +178,30 @@ router.get("/", (req, res) => {
 
     /**
      * 算出対象イベントの開始日時
+     * @param {Moment} baseDate
      * @return {number}
      */
-    function getAfterDateThreshold(): number {
-      const oneYearBefore = moment
-        .tz("Asia/Tokyo")
-        .subtract(1, "years")
-        .startOf("day")
-        .unix();
+    function getAfterDateThreshold(baseDate: Moment): number {
+      const oneYearBefore = baseDate.clone().subtract(1, "years");
+      const oneYearBeforeUnix = oneYearBefore.unix();
       // コロナ禍明け前は無視する
       // NOTE: 1年超えたら判定を消す
       const expireColonaLimitation = 1633014000;
-      if (oneYearBefore < expireColonaLimitation) {
+      if (oneYearBeforeUnix < expireColonaLimitation) {
         return expireColonaLimitation;
       }
-      return oneYearBefore;
+      return oneYearBeforeUnix;
     }
   }
 
   /**
    * 対象のevent結果取得
    * @param {string} eventId
+   * @param {Moment} baseDate
    */
   async function getEventStandings(
-    eventId: string
+    eventId: string,
+    baseDate: Moment
   ): Promise<IConvertedStanding[]> {
     const standingsRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
@@ -245,7 +255,7 @@ router.get("/", (req, res) => {
         return standing.entrant.participants[0].player.user;
       })
       .map((standing: IStanding) => {
-        const point = placementToGradientPoint(standing.placement);
+        const point = placementToGradientPoint(standing.placement, baseDate);
         return {
           id: standing.entrant.participants[0].player.user.id,
           name: standing.entrant.name,
@@ -259,13 +269,15 @@ router.get("/", (req, res) => {
     /**
      * 順位をポイントに変換
      * @param {number} placement
+     * @param {Moment} baseDate
      * @return {number}
      */
-    function placementToGradientPoint(placement: number): number {
+    function placementToGradientPoint(
+      placement: number,
+      baseDate: Moment
+    ): number {
       const originalPoint = getPointFromPlacement(placement);
-      const oldGradient =
-        (moment.tz("Asia/Tokyo").startOf("day").unix() - endAt) /
-        (365 * 24 * 60 * 60);
+      const oldGradient = (baseDate.unix() - endAt) / (365 * 24 * 60 * 60);
       return originalPoint * Math.pow(Math.E, -oldGradient);
     }
 
@@ -291,16 +303,17 @@ router.get("/", (req, res) => {
 
   /**
    * smashgg叩くところ
+   * @param {Moment} baseDate
    */
-  async function createJprData(): Promise<IJprData> {
-    const events = await getEvents();
+  async function createJprData(baseDate: Moment): Promise<IJprData> {
+    const events = await getEvents(baseDate);
     const targetEvents = events.filter((event) => {
       return event.numEntrants >= 128;
     });
     const standings = (
       await Promise.all(
         targetEvents.map(async (event) => {
-          return await getEventStandings(event.id);
+          return await getEventStandings(event.id, baseDate);
         })
       )
     ).flat();
