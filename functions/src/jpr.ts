@@ -146,6 +146,12 @@ router.get("/", (req, res) => {
         .subtract(1, "years")
         .startOf("day")
         .unix();
+      // コロナ禍明け前は無視する
+      // NOTE: 1年超えたら判定を消す
+      const expireColonaLimitation = 1633014000;
+      if (oneYearBefore < expireColonaLimitation) {
+        return expireColonaLimitation;
+      }
       return oneYearBefore;
     }
   }
