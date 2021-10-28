@@ -104,6 +104,7 @@ router.get("/:dateStr?", (req, res) => {
     res.render("jpr/index", {
       jpr,
       ordinal,
+      baseDate,
     });
   }
 
