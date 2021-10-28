@@ -77,7 +77,7 @@ interface IConvertedStanding {
 interface IPlayerRank {
   id: string;
   name: string;
-  point: number;
+  point?: number;
   standings: IConvertedStanding[];
 }
 
@@ -243,26 +243,52 @@ router.get("/", (req, res) => {
             return pr.id === convertedStanding.id;
           });
           if (playerRank) {
-            playerRank.point += convertedStanding.point;
             playerRank.standings.push(convertedStanding);
             return playerRankList;
           }
           playerRankList.push({
             id: convertedStanding.id,
             name: convertedStanding.name,
-            point: convertedStanding.point,
             standings: [convertedStanding],
           });
           return playerRankList;
         },
         []
       )
-      .sort((a: IPlayerRank, b: IPlayerRank) => {
+      .map((playerRank: IPlayerRank): Required<IPlayerRank> => {
+        const topTournamentsNum = 4;
+        if (playerRank.standings.length < topTournamentsNum) {
+          return Object.assign(playerRank, {
+            point: summerizePlayerPoint(playerRank.standings),
+          });
+        }
+        const topStandings = playerRank.standings
+          .sort((a: IConvertedStanding, b: IConvertedStanding) => {
+            return -(a.point - b.point);
+          })
+          .slice(0, topTournamentsNum);
+        playerRank.standings = topStandings;
+        return Object.assign(playerRank, {
+          point: summerizePlayerPoint(playerRank.standings),
+        });
+      })
+      .sort((a: Required<IPlayerRank>, b: Required<IPlayerRank>) => {
         return -(a.point - b.point);
       });
 
     res.render("jpr/index", {
       jpr,
     });
+
+    /**
+     * 順位ポイントの合計を返す
+     * @param {IConvertedStanding[]} standings
+     * @return {number}
+     */
+    function summerizePlayerPoint(standings: IConvertedStanding[]): number {
+      return standings.reduce((sumPoint, standing) => {
+        return sumPoint + standing.point;
+      }, 0);
+    }
   }
 });
