@@ -3,6 +3,7 @@ import * as express from "express";
 import axios from "axios";
 import * as moment from "moment-timezone";
 import { Moment } from "moment";
+import * as ordinal from "ordinal";
 
 import * as jprFirestore from "./firestore_jpr";
 
@@ -101,6 +102,7 @@ router.get("/:dateStr?", (req, res) => {
 
     res.render("jpr/index", {
       jpr,
+      ordinal,
     });
   }
 

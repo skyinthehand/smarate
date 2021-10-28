@@ -6,13 +6,14 @@
       <% for (var pr of jpr) { %>
       <div class="card">
         <h5 class="card-title">
-          <%= pr.placement %> <%= pr.name %> <%= Math.round(pr.point) %>
+          <%= ordinal(pr.placement) %> <%= pr.name %> <%= Math.round(pr.point)
+          %>
         </h5>
         <ul class="list-group list-group-flush">
           <% for (var standing of pr.standings) { %>
           <li class="list-group-item">
-            <%= standing.placement %> <%= standing.tournamentName %> <%=
-            Math.round(standing.point) %>
+            <%= ordinal(standing.placement) %> <%= standing.tournamentName %>
+            <%= Math.round(standing.point) %>
           </li>
           <% } %>
         </ul>
