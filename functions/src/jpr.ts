@@ -292,7 +292,7 @@ router.get("/:dateStr?", (req, res) => {
     ): number {
       const originalPoint = getPointFromPlacement(placement);
       const oldGradient = (baseDate.unix() - endAt) / (365 * 24 * 60 * 60);
-      return originalPoint * Math.pow(Math.E, -oldGradient);
+      return originalPoint * Math.pow(Math.E, 1 - oldGradient);
     }
 
     /**
