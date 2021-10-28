@@ -3,6 +3,8 @@ import * as express from "express";
 import axios from "axios";
 import * as moment from "moment-timezone";
 
+import * as jprFirestore from "./firestore_jpr";
+
 const config = functions.config();
 const smashggAuthToken = config.smashgg.authtoken as string;
 
@@ -84,7 +86,33 @@ export interface IPlayerRank {
 export type IJprData = Required<IPlayerRank>[];
 
 router.get("/", (req, res) => {
-  getJpr();
+  renderJpr();
+
+  /**
+   * JPRのレンダリング
+   */
+  async function renderJpr() {
+    const jpr = await getJpr();
+
+    res.render("jpr/index", {
+      jpr,
+    });
+  }
+
+  /**
+   * キャッシュもしくは生成してjprDataを取得
+   * @return {Promise<IJprData>}
+   */
+  async function getJpr(): Promise<IJprData> {
+    const todayMoment = moment.tz("Asia/Tokyo").startOf("day");
+    const cachedJprData = await jprFirestore.getJprData(todayMoment);
+    if (cachedJprData) {
+      return cachedJprData;
+    }
+    const jprData = await createJprData();
+    await jprFirestore.setJprData(todayMoment, jprData);
+    return jprData;
+  }
 
   /**
    * 対象のevent取得
@@ -264,7 +292,7 @@ router.get("/", (req, res) => {
   /**
    * smashgg叩くところ
    */
-  async function getJpr() {
+  async function createJprData(): Promise<IJprData> {
     const events = await getEvents();
     const targetEvents = events.filter((event) => {
       return event.numEntrants >= 128;
@@ -320,9 +348,7 @@ router.get("/", (req, res) => {
         return -(a.point - b.point);
       });
 
-    res.render("jpr/index", {
-      jpr,
-    });
+    return jpr;
 
     /**
      * 順位ポイントの合計を返す
