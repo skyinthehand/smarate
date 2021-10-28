@@ -6,8 +6,8 @@ import * as session from "express-session";
 import * as moment from "moment-timezone";
 
 import * as firestore from "./firestore";
-import { router as oauth } from "./oauth";
-import { router as match } from "./match";
+// import { router as oauth } from "./oauth";
+// import { router as match } from "./match";
 import { router as jpr } from "./jpr";
 
 const config = functions.config();
@@ -110,18 +110,18 @@ app.get("/", (req, res) => {
 
 app.use("/jpr", jpr);
 
-app.use("/oauth", oauth);
+// app.use("/oauth", oauth);
 
-app.get("/my", (req, res) => {
-  if (!req.session || !req.session.passport) {
-    res.redirect("/");
-    return;
-  }
-  res.render("my/index", {
-    user: req.session.passport.user,
-  });
-});
+// app.get("/my", (req, res) => {
+//   if (!req.session || !req.session.passport) {
+//     res.redirect("/");
+//     return;
+//   }
+//   res.render("my/index", {
+//     user: req.session.passport.user,
+//   });
+// });
 
-app.use("/match", match);
+// app.use("/match", match);
 
 exports.app = functions.https.onRequest(app);
