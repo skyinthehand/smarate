@@ -242,6 +242,9 @@ router.get("/", (req, res) => {
       .sort((a: IPlayerRank, b: IPlayerRank) => {
         return -(a.point - b.point);
       });
-    res.send(jpr);
+
+    res.render("jpr/index", {
+      jpr,
+    });
   }
 });
