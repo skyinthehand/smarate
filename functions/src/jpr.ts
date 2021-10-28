@@ -40,7 +40,7 @@ interface IParticipants {
 interface IEntrant {
   id: string;
   name: string;
-  participants: IParticipants;
+  participants: IParticipants[];
 }
 
 interface IStanding {
@@ -51,14 +51,10 @@ interface IStanding {
 interface IEvent {
   id: string;
   name: string;
-  standings: {
+  numEntrants: number;
+  standings?: {
     nodes: IStanding[];
   };
-}
-
-interface IConvertedEvent extends IEvent {
-  endAt: number;
-  tournamentName: string;
 }
 
 interface ITournament {
@@ -88,16 +84,16 @@ router.get("/", (req, res) => {
   getJpr();
 
   /**
-   * smashgg叩くところ
+   * 対象のevent取得
    */
-  async function getJpr() {
-    const smashggRes = await axios.post(
+  async function getEvents(): Promise<IEvent[]> {
+    const eventRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
       {
-        query: `query TournamentsByCountry($perPage: Int!, $page: Int!) {
+        query: `query TournamentsByCountry {
           tournaments(query: {
-            perPage: $perPage
-            page: $page
+            perPage: 10
+            page: 1
             filter: {
               countryCode: "JP"
               past: true
@@ -114,35 +110,11 @@ router.get("/", (req, res) => {
               events {
                 id
                 name
-                standings(query: {
-                  perPage: 128
-                  page: 1
-                }){
-                  nodes {
-                    placement
-                    entrant {
-                      id
-                      name
-                      participants {
-                        player {
-                          user {
-                            id
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                numEntrants
               }
             }
           }
-        },`,
-        variables: {
-          cCode: "JP",
-          perPage: 10,
-          page: 1,
-        },
-        operationName: "TournamentsByCountry",
+        }`,
       },
       {
         headers: {
@@ -150,37 +122,99 @@ router.get("/", (req, res) => {
         },
       }
     );
-    const tournaments: ITournament[] = smashggRes.data.data.tournaments.nodes;
-    const jpr = tournaments
-      .map((tournament: ITournament): IConvertedEvent[] => {
-        const targetEvents = tournament.events.filter((event) => {
-          return event.standings.nodes.length >= 128;
-        });
-        return targetEvents.map((event: IEvent): IConvertedEvent => {
-          return {
-            id: event.id,
-            name: event.name,
-            standings: event.standings,
-            endAt: tournament.endAt,
-            tournamentName: tournament.name,
-          };
-        });
+    const tournaments: ITournament[] = eventRes.data.data.tournaments.nodes;
+    return tournaments
+      .map((tournament) => {
+        return tournament.events;
       })
-      .flat()
-      .map((event: IConvertedEvent): IConvertedStanding[] => {
-        return event.standings.nodes.map((standing: IStanding) => {
-          const point = placementToPoint[standing.placement];
-          return {
-            id: standing.entrant.participants.player.user.id,
-            name: standing.entrant.name,
-            point,
-            placement: standing.placement,
-            tournamentName: event.tournamentName,
-            eventName: event.name,
-          };
-        });
+      .flat();
+  }
+
+  /**
+   * 対象のevent結果取得
+   * @param {string} eventId
+   */
+  async function getEventStandings(
+    eventId: string
+  ): Promise<IConvertedStanding[]> {
+    const standingsRes = await axios.post(
+      "https://api.smash.gg/gql/alpha",
+      {
+        query: `query EventStandings($eventId: ID!) {
+        event(id: $eventId) {
+          id
+          name
+          tournament {
+            name
+          }
+          standings(query: {
+            perPage: 12,
+            page: 1
+          }){
+            nodes {
+              placement
+              entrant {
+                id
+                name
+                participants {
+                  player {
+                    user {
+                      id
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }`,
+        variables: {
+          eventId,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${smashggAuthToken}`,
+        },
+      }
+    );
+    const tournamentName = standingsRes.data.data.event.tournament.name;
+    const eventName = standingsRes.data.data.event.name;
+    const standings = standingsRes.data.data.event.standings.nodes;
+    return standings
+      .filter((standing: IStanding) => {
+        return standing.entrant.participants[0].player.user;
       })
-      .flat()
+      .map((standing: IStanding) => {
+        const point = placementToPoint[standing.placement];
+        return {
+          id: standing.entrant.participants[0].player.user.id,
+          name: standing.entrant.name,
+          point,
+          placement: standing.placement,
+          tournamentName: tournamentName,
+          eventName: eventName,
+        };
+      });
+  }
+
+  /**
+   * smashgg叩くところ
+   */
+  async function getJpr() {
+    const events = await getEvents();
+    const targetEvents = events.filter((event) => {
+      return event.numEntrants >= 128;
+    });
+    const standings = (
+      await Promise.all(
+        targetEvents.map(async (event) => {
+          return await getEventStandings(event.id);
+        })
+      )
+    ).flat();
+
+    const jpr = standings
       .reduce(
         (
           playerRankList: IPlayerRank[],
