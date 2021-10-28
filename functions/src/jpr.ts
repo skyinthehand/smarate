@@ -74,12 +74,14 @@ interface IConvertedStanding {
   eventName: string;
 }
 
-interface IPlayerRank {
+export interface IPlayerRank {
   id: string;
   name: string;
   point?: number;
   standings: IConvertedStanding[];
 }
+
+export type IJprData = Required<IPlayerRank>[];
 
 router.get("/", (req, res) => {
   getJpr();
