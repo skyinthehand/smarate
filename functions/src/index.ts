@@ -4,6 +4,7 @@ import * as passport from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
 import * as session from "express-session";
 import * as moment from "moment-timezone";
+import axios from "axios";
 
 import * as firestore from "./firestore";
 import { router as oauth } from "./oauth";
@@ -15,6 +16,7 @@ const twitterConfig: IStrategyOption = {
   consumerSecret: config.twitter.consumersecret as string,
   callbackURL: "http://localhost:5000/oauth/callback",
 };
+const smashggAuthToken = config.smashgg.authtoken as string;
 const twitterStrategy = new TwitterStrategy(
   twitterConfig,
   (accessToken, refreshToken, profile, done) => {
@@ -101,6 +103,52 @@ app.get("/", (req, res) => {
   res.render("index", {
     twitter: req.session.twitter,
   });
+});
+
+app.get("/jpr", (req, res) => {
+  getJpr();
+
+  /**
+   * smashgg叩くところ
+   */
+  async function getJpr() {
+    const smashggRes = await axios.post(
+      "https://api.smash.gg/gql/alpha",
+      {
+        query: `query TournamentsByCountry {
+          tournaments(query: {
+            perPage: 4
+            page: 2
+            filter: {
+              countryCode: "JP"
+              past: true
+              videogameIds: [
+                1386
+              ]
+            }
+          }) {
+            nodes {
+              id
+              name
+              countryCode
+            }
+          }
+        },`,
+        variables: {
+          cCode: "JP",
+          perPage: 4,
+          page: 2,
+        },
+        operationName: "TournamentsByCountry",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${smashggAuthToken}`,
+        },
+      }
+    );
+    res.send(smashggRes.data);
+  }
 });
 
 app.use("/oauth", oauth);
