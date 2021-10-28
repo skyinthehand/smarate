@@ -3,6 +3,20 @@
   <%- include('../_partials/head') %>
   <body>
     <main class="px-3">
+      <div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">説明</h1>
+        <p class="lead">
+          これはJak式PowerRanking略してJPRです。
+          下記ルールに則って、<b>毎日</b>更新されることが特徴です。
+          個人が作成したランキングですので、あくまで個人の範囲内でお楽しみください。
+          四捨五入の関係で大会ごとのポイントの合算が合計ポイントと一致しないことがあります。
+          <h2>計算ルール</h2>
+          主に<a href="https://harukisb.hatenablog.com/entry/2016/11/03/230644">Haruki氏のブログ</a>を元に算出しています。
+          主要大会の状況がまちまちなため、smash.ggに登録されている128人以上の大会を算出対象としています。
+          暫定的なコロナ禍明けである2021年10月1日以降の大会を対象にしています。
+          2022年10月1日以降は直近1年以内の大会が対象になります。
+        </p>
+      </div>
       <% for (var pr of jpr) { %>
       <div class="card">
         <h5 class="card-title">
