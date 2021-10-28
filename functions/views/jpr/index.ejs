@@ -3,10 +3,10 @@
   <%- include('../_partials/head') %>
   <body>
     <main class="px-3">
-      <% jpr.forEach(function (pr, index) { %>
+      <% for (var pr of jpr) { %>
       <div class="card">
         <h5 class="card-title">
-          <%= index + 1 %> <%= pr.name %> <%= Math.round(pr.point) %>
+          <%= pr.placement %> <%= pr.name %> <%= Math.round(pr.point) %>
         </h5>
         <ul class="list-group list-group-flush">
           <% for (var standing of pr.standings) { %>
@@ -17,7 +17,7 @@
           <% } %>
         </ul>
       </div>
-      <% }); %>
+      <% } %>
     </main>
   </body>
 </html>

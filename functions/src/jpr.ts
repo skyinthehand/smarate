@@ -84,7 +84,11 @@ export interface IPlayerRank {
   standings: IConvertedStanding[];
 }
 
-export type IJprData = Required<IPlayerRank>[];
+export interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
+  placement: number;
+}
+
+export type IJprData = IPlayerRankWithPlacement[];
 
 router.get("/:dateStr?", (req, res) => {
   renderJpr();
@@ -326,6 +330,8 @@ router.get("/:dateStr?", (req, res) => {
       )
     ).flat();
 
+    let prevPlacement = 0;
+    let prevPoint = 0;
     const jpr = standings
       .reduce(
         (
@@ -367,6 +373,21 @@ router.get("/:dateStr?", (req, res) => {
       })
       .sort((a: Required<IPlayerRank>, b: Required<IPlayerRank>) => {
         return -(a.point - b.point);
+      })
+      .map((playerRank, index): IPlayerRankWithPlacement => {
+        // TODO: マジックナンバーの削除
+        // 0.01以内は同じ順位と見なす
+        if (Math.abs(playerRank.point - prevPoint) < 0.01) {
+          prevPoint = playerRank.point;
+          return Object.assign(playerRank, {
+            placement: prevPlacement,
+          });
+        }
+        prevPoint = playerRank.point;
+        prevPlacement = index + 1;
+        return Object.assign(playerRank, {
+          placement: prevPlacement,
+        });
       });
 
     return jpr;
