@@ -221,7 +221,7 @@ router.get("/", (req, res) => {
           convertedStanding: IConvertedStanding
         ): IPlayerRank[] => {
           const playerRank = playerRankList.find((pr) => {
-            pr.id === convertedStanding.id;
+            return pr.id === convertedStanding.id;
           });
           if (playerRank) {
             playerRank.point += convertedStanding.point;
