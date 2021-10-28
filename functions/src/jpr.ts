@@ -88,17 +88,18 @@ router.get("/", (req, res) => {
    * 対象のevent取得
    */
   async function getEvents(): Promise<IEvent[]> {
+    const afterDate = getAfterDateThreshold();
     const eventRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
       {
-        query: `query TournamentsByCountry {
+        query: `query TournamentsByCountry ($afterDate: Timestamp!) {
           tournaments(query: {
             perPage: 100
             page: 1
             filter: {
               countryCode: "JP"
               past: true
-              afterDate: 1633014000
+              afterDate: $afterDate
               videogameIds: [
                 1386
               ]
@@ -117,6 +118,9 @@ router.get("/", (req, res) => {
             }
           }
         }`,
+        variables: {
+          afterDate,
+        },
       },
       {
         headers: {
@@ -131,6 +135,19 @@ router.get("/", (req, res) => {
         return tournament.events;
       })
       .flat();
+
+    /**
+     * 算出対象イベントの開始日時
+     * @return {number}
+     */
+    function getAfterDateThreshold(): number {
+      const oneYearBefore = moment
+        .tz("Asia/Tokyo")
+        .subtract(1, "years")
+        .startOf("day")
+        .unix();
+      return oneYearBefore;
+    }
   }
 
   /**
