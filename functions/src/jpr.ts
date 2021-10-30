@@ -203,6 +203,7 @@ router.get("/:dateStr?", (req, res) => {
       jpr,
       ordinal,
       baseDate,
+      pointByEntrantNumList,
     });
   }
 
