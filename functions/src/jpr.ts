@@ -404,7 +404,7 @@ router.get("/:dateStr?", (req, res) => {
       if (filteredPointByEntrantNumList.length < 1) {
         return [];
       }
-      return filteredPointByEntrantNumList[1].placementToPointList;
+      return filteredPointByEntrantNumList[0].placementToPointList;
     }
 
     /**
