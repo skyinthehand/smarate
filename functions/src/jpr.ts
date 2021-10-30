@@ -99,6 +99,10 @@ router.get("/:dateStr?", (req, res) => {
    */
   async function renderJpr() {
     const baseDate = getBaseDate();
+    // 未来日時禁止
+    if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
+      res.redirect(req.baseUrl);
+    }
     const jpr = await getJpr(baseDate);
 
     res.render("jpr/index", {
