@@ -50,13 +50,13 @@
       <div class="card">
         <h5 class="card-title">
           <%= ordinal(pr.placement) %> <%= pr.name %> <%= Math.round(pr.point)
-          %>
+          %>pt
         </h5>
         <ul class="list-group list-group-flush">
           <% for (var standing of pr.standings) { %>
           <li class="list-group-item">
             <%= ordinal(standing.placement) %> <%= standing.tournamentName %>
-            <%= Math.round(standing.point) %>
+            <%= Math.round(standing.point) %>pt
           </li>
           <% } %>
         </ul>
