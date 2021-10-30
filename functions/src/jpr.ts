@@ -13,22 +13,27 @@ const smashggAuthToken = config.smashgg.authtoken as string;
 // eslint-disable-next-line new-cap
 export const router = express.Router();
 
-const placementToPoint: { [key: number]: number } = {
-  1: 800,
-  2: 700,
-  3: 600,
-  4: 500,
-  5: 400,
-  7: 288,
-  9: 192,
-  13: 128,
-  17: 80,
-  25: 40,
-  33: 16,
-  49: 8,
-  65: 4,
-  97: 2,
-};
+interface IPlacementToPoint {
+  placement: number;
+  point: number;
+}
+
+const placementToPointList: IPlacementToPoint[] = [
+  { placement: 1, point: 400 },
+  { placement: 2, point: 350 },
+  { placement: 3, point: 300 },
+  { placement: 4, point: 250 },
+  { placement: 5, point: 200 },
+  { placement: 7, point: 144 },
+  { placement: 9, point: 96 },
+  { placement: 13, point: 64 },
+  { placement: 17, point: 40 },
+  { placement: 25, point: 20 },
+  { placement: 33, point: 8 },
+  { placement: 49, point: 4 },
+  { placement: 65, point: 0 },
+  { placement: 97, point: 0 },
+];
 
 interface IUser {
   id: string;
@@ -307,17 +312,17 @@ router.get("/:dateStr?", (req, res) => {
      * @return {number}
      */
     function getPointFromPlacement(placement: number): number {
-      const underStandingPoints = Object.entries(placementToPoint)
-        .filter(([key]) => {
-          return Number.parseInt(key) >= placement;
+      const underStandingPoints = placementToPointList
+        .filter((placementToPoint) => {
+          return placementToPoint.placement >= placement;
         })
         .sort((a, b) => {
-          return -(a[1] - b[1]);
+          return -(a.point - b.point);
         });
       if (underStandingPoints.length < 1) {
         return 0;
       }
-      return underStandingPoints[0][1];
+      return underStandingPoints[0].point;
     }
   }
 
