@@ -147,10 +147,21 @@ interface IStanding {
   entrant: IEntrant;
 }
 
+enum EActivityState {
+  CREATED = "CREATED",
+  ACTIVE = "ACTIVE",
+  COMPLETED = "COMPLETED",
+  READY = "READY",
+  INVALID = "INVALID",
+  CALLED = "CALLED",
+  QUEUED = "QUEUED",
+}
+
 interface IEvent {
   id: string;
   name: string;
   numEntrants: number;
+  state: EActivityState;
   standings?: {
     nodes: IStanding[];
   };
@@ -251,7 +262,6 @@ router.get("/:dateStr?", (req, res) => {
             page: 1
             filter: {
               countryCode: "JP"
-              past: true
               afterDate: $afterDate
               beforeDate: $beforeDate
               videogameIds: [
@@ -268,6 +278,7 @@ router.get("/:dateStr?", (req, res) => {
                 id
                 name
                 numEntrants
+                state
               }
             }
           }
@@ -458,7 +469,10 @@ router.get("/:dateStr?", (req, res) => {
   async function createJprData(baseDate: Moment): Promise<IJprData> {
     const events = await getEvents(baseDate);
     const targetEvents = events.filter((event) => {
-      return event.numEntrants >= minimumEntrantNum;
+      return (
+        event.state === EActivityState.COMPLETED &&
+        event.numEntrants >= minimumEntrantNum
+      );
     });
     const standings = (
       await Promise.all(
