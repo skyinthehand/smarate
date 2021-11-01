@@ -21,20 +21,20 @@ interface IPlacementToPoint {
 const minimumEntrantNum = 61;
 
 const placementToPointList: IPlacementToPoint[] = [
-  { placement: 1, point: 400 },
-  { placement: 2, point: 350 },
-  { placement: 3, point: 300 },
-  { placement: 4, point: 250 },
-  { placement: 5, point: 200 },
-  { placement: 7, point: 144 },
-  { placement: 9, point: 96 },
-  { placement: 13, point: 64 },
-  { placement: 17, point: 40 },
-  { placement: 25, point: 20 },
-  { placement: 33, point: 8 },
-  { placement: 49, point: 4 },
-  { placement: 65, point: 0 },
-  { placement: 97, point: 0 },
+  { placement: 1, point: 800 },
+  { placement: 2, point: 700 },
+  { placement: 3, point: 600 },
+  { placement: 4, point: 500 },
+  { placement: 5, point: 400 },
+  { placement: 7, point: 288 },
+  { placement: 9, point: 192 },
+  { placement: 13, point: 128 },
+  { placement: 17, point: 80 },
+  { placement: 25, point: 40 },
+  { placement: 33, point: 16 },
+  { placement: 49, point: 8 },
+  { placement: 65, point: 4 },
+  { placement: 97, point: 2 },
 ];
 
 interface IUser {
