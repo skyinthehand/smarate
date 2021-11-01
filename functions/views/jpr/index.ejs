@@ -9,46 +9,62 @@
           これはJak式JapanPowerRanking略してJJPRです。
           下記ルールに則って、<b>毎日</b>更新されることが特徴です。
           個人が作成したランキングですので、あくまで個人の範囲内でお楽しみください。
-          四捨五入の関係で大会ごとのポイントの合算が合計ポイントと一致しないことがあります。
-          <h2>計算ルール</h2>
-          主に<a href="https://harukisb.hatenablog.com/entry/2016/11/03/230644">Haruki氏のブログ</a>を元に算出しています。
-          ただし、主要大会の開催状況がまちまちなため、smash.ggに登録されている61人以上の大会を算出対象とした上で傾斜をつけています。
-          <p>
-            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePointTable" aria-expanded="false" aria-controls="collapsePointTable">
-              参加人数と順位によるポイント表
-            </button>
-          </p>
-          <div class="collapse" id="collapsePointTable">
-            対応する順位がない場合は最も近い下の順位で計算
-            <table class="table">
-              <thead>
-                <tr>
-                  <th scope="col">大会参加人数</th>
-                  <% for (var pointByEventNum of pointByEntrantNumList) { %>
-                  <th scope="col"><%= pointByEventNum.numEntrants %>〜</th>
-                  <% } %>
-                </tr>
-              </thead>
-              <tbody>
-                <% for (var index = 0; index < pointByEntrantNumList[0].placementToPointList.length; index++) { %>
-                <tr>
-                  <th scope="col"><%= ordinal(pointByEntrantNumList[0].placementToPointList[index].placement) %></th>
-                  <% for (var pointByEventNum of pointByEntrantNumList) { %>
-                    <th scope="col"><%= pointByEventNum.placementToPointList[index].point %></th>
-                  <% } %>
-                </tr>
-                <% } %>
-              </tbody>
-            </table>
+          <div class="accordion" id="accordionDesc">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingCalcRule">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCalcRule" aria-expanded="false" aria-controls="collapseCalcRule">
+                  計算ルール
+                </button>
+              </h2>
+              <div id="collapseCalcRule" class="accordion-collapse collapse" aria-labelledby="headingCalcRule" data-bs-parent="#accordionDesc">
+                <div class="accordion-body">
+                  主に<a href="https://harukisb.hatenablog.com/entry/2016/11/03/230644">Haruki氏のブログ</a>を元に算出しています。
+                  ただし、主要大会の開催状況がまちまちなため、smash.ggに登録されている61人以上の大会を算出対象とした上で傾斜をつけています。
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingPointTable">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePointTable" aria-expanded="false" aria-controls="collapsePointTable">
+                  参加人数と順位によるポイント表
+                </button>
+              </h2>
+              <div id="collapsePointTable" class="accordion-collapse collapse" aria-labelledby="headingPointTable" data-bs-parent="#accordionDesc">
+                <div class="accordion-body">
+                  対応する順位がない場合は最も近い下の順位で計算
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">大会参加人数</th>
+                        <% for (var pointByEventNum of pointByEntrantNumList) { %>
+                        <th scope="col"><%= pointByEventNum.numEntrants %>〜</th>
+                        <% } %>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% for (var index = 0; index < pointByEntrantNumList[0].placementToPointList.length; index++) { %>
+                      <tr>
+                        <th scope="col"><%= ordinal(pointByEntrantNumList[0].placementToPointList[index].placement) %></th>
+                        <% for (var pointByEventNum of pointByEntrantNumList) { %>
+                          <th scope="col"><%= pointByEventNum.placementToPointList[index].point %></th>
+                        <% } %>
+                      </tr>
+                      <% } %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
+          四捨五入の関係で大会ごとのポイントの合算が合計ポイントと一致しないことがあります。
           暫定的なコロナ禍明けである2021年10月1日以降の大会を対象にしています。
           2022年10月1日以降は直近1年以内の大会が対象になります。
         </p>
       </div>
-      <h4 class="mb-3">基準日時　<%= baseDate.format("YYYY年MM月DD日") %></h4>
+      <h4 class="mb-3">算出日時　<%= baseDate.format("YYYY年MM月DD日") %></h4>
       <% for (var pr of jpr) { %>
-      <div class="card">
-        <h5 class="card-title">
+      <div class="card my-3">
+        <h5 class="card-title px-1">
           <%= ordinal(pr.placement) %> <%= pr.name %> <%= Math.round(pr.point)
           %>pt
         </h5>
