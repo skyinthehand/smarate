@@ -18,110 +18,23 @@ interface IPlacementToPoint {
   point: number;
 }
 
-// entrantNumは参加最低人数
-interface IPointByEntrantNum {
-  numEntrants: number;
-  placementToPointList: IPlacementToPoint[];
-}
-
 const minimumEntrantNum = 61;
 
-const pointByEntrantNumList: IPointByEntrantNum[] = [
-  {
-    numEntrants: minimumEntrantNum,
-    placementToPointList: [
-      { placement: 1, point: 400 },
-      { placement: 2, point: 350 },
-      { placement: 3, point: 300 },
-      { placement: 4, point: 250 },
-      { placement: 5, point: 200 },
-      { placement: 7, point: 144 },
-      { placement: 9, point: 96 },
-      { placement: 13, point: 64 },
-      { placement: 17, point: 40 },
-      { placement: 25, point: 20 },
-      { placement: 33, point: 8 },
-      { placement: 49, point: 4 },
-      { placement: 65, point: 0 },
-      { placement: 97, point: 0 },
-    ],
-  },
-  {
-    numEntrants: 121,
-    placementToPointList: [
-      { placement: 1, point: 800 },
-      { placement: 2, point: 700 },
-      { placement: 3, point: 600 },
-      { placement: 4, point: 500 },
-      { placement: 5, point: 400 },
-      { placement: 7, point: 288 },
-      { placement: 9, point: 192 },
-      { placement: 13, point: 128 },
-      { placement: 17, point: 80 },
-      { placement: 25, point: 40 },
-      { placement: 33, point: 16 },
-      { placement: 49, point: 8 },
-      { placement: 65, point: 4 },
-      { placement: 97, point: 2 },
-    ],
-  },
-  {
-    numEntrants: 241,
-    placementToPointList: [
-      { placement: 1, point: 1600 },
-      { placement: 2, point: 1400 },
-      { placement: 3, point: 1200 },
-      { placement: 4, point: 1000 },
-      { placement: 5, point: 800 },
-      { placement: 7, point: 576 },
-      { placement: 9, point: 384 },
-      { placement: 13, point: 256 },
-      { placement: 17, point: 160 },
-      { placement: 25, point: 80 },
-      { placement: 33, point: 32 },
-      { placement: 49, point: 16 },
-      { placement: 65, point: 8 },
-      { placement: 97, point: 4 },
-    ],
-  },
-  {
-    numEntrants: 481,
-    placementToPointList: [
-      { placement: 1, point: 3200 },
-      { placement: 2, point: 2800 },
-      { placement: 3, point: 2400 },
-      { placement: 4, point: 2000 },
-      { placement: 5, point: 1600 },
-      { placement: 7, point: 1152 },
-      { placement: 9, point: 768 },
-      { placement: 13, point: 512 },
-      { placement: 17, point: 320 },
-      { placement: 25, point: 160 },
-      { placement: 33, point: 64 },
-      { placement: 49, point: 32 },
-      { placement: 65, point: 16 },
-      { placement: 97, point: 8 },
-    ],
-  },
-  {
-    numEntrants: 961,
-    placementToPointList: [
-      { placement: 1, point: 6400 },
-      { placement: 2, point: 5600 },
-      { placement: 3, point: 4800 },
-      { placement: 4, point: 4000 },
-      { placement: 5, point: 3200 },
-      { placement: 7, point: 2304 },
-      { placement: 9, point: 1536 },
-      { placement: 13, point: 1024 },
-      { placement: 17, point: 640 },
-      { placement: 25, point: 320 },
-      { placement: 33, point: 128 },
-      { placement: 49, point: 64 },
-      { placement: 65, point: 32 },
-      { placement: 97, point: 16 },
-    ],
-  },
+const placementToPointList: IPlacementToPoint[] = [
+  { placement: 1, point: 400 },
+  { placement: 2, point: 350 },
+  { placement: 3, point: 300 },
+  { placement: 4, point: 250 },
+  { placement: 5, point: 200 },
+  { placement: 7, point: 144 },
+  { placement: 9, point: 96 },
+  { placement: 13, point: 64 },
+  { placement: 17, point: 40 },
+  { placement: 25, point: 20 },
+  { placement: 33, point: 8 },
+  { placement: 49, point: 4 },
+  { placement: 65, point: 0 },
+  { placement: 97, point: 0 },
 ];
 
 interface IUser {
@@ -214,7 +127,7 @@ router.get("/:dateStr?", (req, res) => {
       jpr,
       ordinal,
       baseDate,
-      pointByEntrantNumList,
+      placementToPointList,
     });
   }
 
@@ -378,7 +291,6 @@ router.get("/:dateStr?", (req, res) => {
     const eventName = standingsRes.data.data.event.name;
     const numEntrants = standingsRes.data.data.event.numEntrants;
     const standings = standingsRes.data.data.event.standings.nodes;
-    const placementToPointList = getPlacementToPointList(numEntrants);
     return standings
       .filter((standing: IStanding) => {
         return standing.entrant.participants[0].player.user;
@@ -387,6 +299,7 @@ router.get("/:dateStr?", (req, res) => {
         const point = placementToGradientPoint(
           standing.placement,
           placementToPointList,
+          numEntrants,
           baseDate
         );
         return {
@@ -400,34 +313,17 @@ router.get("/:dateStr?", (req, res) => {
       });
 
     /**
-     * 参加人数からポイント表を引く
-     * @param {number} numEntrants
-     * @return {IPlacementToPoint[]}
-     */
-    function getPlacementToPointList(numEntrants: number): IPlacementToPoint[] {
-      const filteredPointByEntrantNumList = pointByEntrantNumList
-        .filter((placementToPointList) => {
-          return placementToPointList.numEntrants <= numEntrants;
-        })
-        .sort((a, b) => {
-          return -(a.numEntrants - b.numEntrants);
-        });
-      if (filteredPointByEntrantNumList.length < 1) {
-        return [];
-      }
-      return filteredPointByEntrantNumList[0].placementToPointList;
-    }
-
-    /**
      * 順位をポイントに変換
      * @param {number} placement
      * @param {IPlacementToPoint[]} placementToPointList
+     * @param {number} numEntrants
      * @param {Moment} baseDate
      * @return {number}
      */
     function placementToGradientPoint(
       placement: number,
       placementToPointList: IPlacementToPoint[],
+      numEntrants: number,
       baseDate: Moment
     ): number {
       const originalPoint = getPointFromPlacement(
@@ -435,7 +331,7 @@ router.get("/:dateStr?", (req, res) => {
         placementToPointList
       );
       const oldGradient = (baseDate.unix() - endAt) / (365 * 24 * 60 * 60);
-      return originalPoint * Math.pow(Math.E, 1 - oldGradient);
+      return originalPoint * numEntrants * Math.pow(Math.E, 1 - oldGradient);
     }
 
     /**

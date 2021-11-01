@@ -26,28 +26,24 @@
             <div class="accordion-item">
               <h2 class="accordion-header" id="headingPointTable">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePointTable" aria-expanded="false" aria-controls="collapsePointTable">
-                  参加人数と順位によるポイント表
+                  順位によるポイント表
                 </button>
               </h2>
               <div id="collapsePointTable" class="accordion-collapse collapse" aria-labelledby="headingPointTable" data-bs-parent="#accordionDesc">
                 <div class="accordion-body">
-                  対応する順位がない場合は最も近い下の順位で計算
+                  このポイントに経過日数による傾斜（ネイピア数^(1-([経過日数]/365))倍）がかかります。対応する順位がない場合は最も近い下の順位で計算しています。
                   <table class="table">
                     <thead>
                       <tr>
-                        <th scope="col">大会参加人数</th>
-                        <% for (var pointByEventNum of pointByEntrantNumList) { %>
-                        <th scope="col"><%= pointByEventNum.numEntrants %>〜</th>
-                        <% } %>
+                        <th scope="col">順位</th>
+                        <th scope="col">獲得ポイント</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <% for (var index = 0; index < pointByEntrantNumList[0].placementToPointList.length; index++) { %>
+                      <% for (var placementToPoint of placementToPointList) { %>
                       <tr>
-                        <th scope="col"><%= ordinal(pointByEntrantNumList[0].placementToPointList[index].placement) %></th>
-                        <% for (var pointByEventNum of pointByEntrantNumList) { %>
-                          <th scope="col"><%= pointByEventNum.placementToPointList[index].point %></th>
-                        <% } %>
+                        <th scope="col"><%= ordinal(placementToPoint.placement) %></th>
+                        <th scope="col"><%= placementToPoint.point %> × 大会参加人数</th>
                       </tr>
                       <% } %>
                     </tbody>
@@ -65,14 +61,14 @@
       <% for (var pr of jpr) { %>
       <div class="card my-3">
         <h5 class="card-title px-1">
-          <%= ordinal(pr.placement) %> <%= pr.name %> <%= Math.round(pr.point)
+          <%= ordinal(pr.placement) %> <%= pr.name %> <%= Math.round(pr.point).toLocaleString()
           %>pt
         </h5>
         <ul class="list-group list-group-flush">
           <% for (var standing of pr.standings) { %>
           <li class="list-group-item">
             <%= ordinal(standing.placement) %> <%= standing.tournamentName %>
-            <%= Math.round(standing.point) %>pt
+            <%= Math.round(standing.point).toLocaleString() %>pt
           </li>
           <% } %>
         </ul>
