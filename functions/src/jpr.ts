@@ -166,11 +166,17 @@ router.get("/:dateStr?", (req, res) => {
     const afterDate = getAfterDateThreshold(baseDate);
     const beforeDate = baseDate.unix();
     const cCode = "JP";
-    const page = 1;
-    const eventRes = await axios.post(
-      "https://api.smash.gg/gql/alpha",
-      {
-        query: `query TournamentsByCountry
+
+    /**
+     * ページ内のevent取得
+     * @param {number} page
+     * @return {Promise<IEvent[]>}
+     */
+    async function getEventsInPage(page: number): Promise<IEvent[]> {
+      const eventRes = await axios.post(
+        "https://api.smash.gg/gql/alpha",
+        {
+          query: `query TournamentsByCountry
         ($afterDate: Timestamp!, $beforeDate: Timestamp!,
           $cCode: String!, $page: Int!) {
           tournaments(query: {
@@ -199,26 +205,39 @@ router.get("/:dateStr?", (req, res) => {
             }
           }
         }`,
-        variables: {
-          afterDate,
-          beforeDate,
-          cCode,
-          page,
+          variables: {
+            afterDate,
+            beforeDate,
+            cCode,
+            page,
+          },
         },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${smashggAuthToken}`,
-        },
+        {
+          headers: {
+            Authorization: `Bearer ${smashggAuthToken}`,
+          },
+        }
+      );
+      const tournaments: Required<ITournament>[] =
+        eventRes.data.data.tournaments.nodes;
+      return tournaments
+        .map((tournament) => {
+          return tournament.events;
+        })
+        .flat();
+    }
+
+    const events: IEvent[] = [];
+    // 最大でも100ページまで
+    for (let page = 1; page <= 100; page++) {
+      const eventsInPage = await getEventsInPage(page);
+      events.push(...eventsInPage);
+      if (eventsInPage.length < 1) {
+        break;
       }
-    );
-    const tournaments: Required<ITournament>[] =
-      eventRes.data.data.tournaments.nodes;
-    return tournaments
-      .map((tournament) => {
-        return tournament.events;
-      })
-      .flat();
+    }
+
+    return events;
 
     /**
      * 算出対象イベントの開始日時
