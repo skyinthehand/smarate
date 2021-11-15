@@ -165,16 +165,17 @@ router.get("/:dateStr?", (req, res) => {
   async function getEvents(baseDate: Moment): Promise<IEvent[]> {
     const afterDate = getAfterDateThreshold(baseDate);
     const beforeDate = baseDate.unix();
+    const cCode = "JP";
     const eventRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
       {
         query: `query TournamentsByCountry
-        ($afterDate: Timestamp!, $beforeDate: Timestamp!) {
+        ($afterDate: Timestamp!, $beforeDate: Timestamp!, $cCode: String!) {
           tournaments(query: {
             perPage: 100
             page: 1
             filter: {
-              countryCode: "JP"
+              countryCode: $cCode
               afterDate: $afterDate
               beforeDate: $beforeDate
               videogameIds: [
@@ -199,6 +200,7 @@ router.get("/:dateStr?", (req, res) => {
         variables: {
           afterDate,
           beforeDate,
+          cCode,
         },
       },
       {
