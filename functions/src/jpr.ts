@@ -153,11 +153,19 @@ router.get("/:dateStr?", (req, res) => {
     if (cachedJprData) {
       return cachedJprData;
     }
+    return createJprDataAndSave(baseDate);
+  }
+
+  /**
+   * jprDataを作成してキャッシュに保存
+   * @param {Moment} baseDate
+   * @return {Promise<IJprData>}
+   */
+  async function createJprDataAndSave(baseDate: Moment): Promise<IJprData> {
     const jprData = await createJprData(baseDate);
     await jprFirestore.setJprData(baseDate, jprData);
     return jprData;
   }
-
   /**
    * 対象のevent取得
    * @param {Moment} baseDate
