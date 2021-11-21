@@ -109,6 +109,18 @@ export interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
 
 export type IJprData = IPlayerRankWithPlacement[];
 
+/**
+ * 算出基準時間の取得
+ * @param {string} dateStr
+ * @return {Moment}
+ */
+function getBaseDate(dateStr: string): Moment {
+  if (dateStr) {
+    return moment(dateStr).tz("Asia/Tokyo").startOf("day");
+  }
+  return moment.tz("Asia/Tokyo").startOf("day");
+}
+
 router.get("/:dateStr?", (req, res) => {
   renderJpr();
 
@@ -116,7 +128,7 @@ router.get("/:dateStr?", (req, res) => {
    * JPRのレンダリング
    */
   async function renderJpr() {
-    const baseDate = getBaseDate();
+    const baseDate = getBaseDate(req.params.dateStr as string);
     // 未来日時禁止
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
@@ -129,18 +141,6 @@ router.get("/:dateStr?", (req, res) => {
       baseDate,
       placementToPointList,
     });
-  }
-
-  /**
-   * 算出基準時間の取得
-   * @return {Moment}
-   */
-  function getBaseDate(): Moment {
-    const dateStr = req.params.dateStr;
-    if (dateStr) {
-      return moment(dateStr).tz("Asia/Tokyo").startOf("day");
-    }
-    return moment.tz("Asia/Tokyo").startOf("day");
   }
 
   /**
