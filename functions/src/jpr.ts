@@ -18,7 +18,7 @@ interface IPlacementToPoint {
   point: number;
 }
 
-const minimumEntrantNum = 61;
+const minimumEntrantNum = 241;
 
 const placementToPointList: IPlacementToPoint[] = [
   { placement: 1, point: 800 },
@@ -109,6 +109,26 @@ export interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
 
 export type IJprData = IPlayerRankWithPlacement[];
 
+router.get("/check/:dateStr?", (req, res) => {
+  checkJpr();
+
+  /**
+   * JPRのデータがあるかどうかのチェック
+   */
+  async function checkJpr() {
+    const baseDate = getBaseDate(req.params.dateStr as string);
+    // 未来日時禁止
+    if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
+      res.send(false);
+    }
+    const cachedJprData = await jprFirestore.getJprData(baseDate);
+    if (cachedJprData) {
+      return res.send(true);
+    }
+    return res.send(false);
+  }
+});
+
 /**
  * 算出基準時間の取得
  * @param {string} dateStr
@@ -133,28 +153,33 @@ router.get("/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
-    const jpr = await getJpr(baseDate);
+    const cachedJprData = await jprFirestore.getJprData(baseDate);
+    if (!cachedJprData) {
+      createJprDataAndSave(baseDate);
+      res.render("jpr/wait");
+      return;
+    }
 
     res.render("jpr/index", {
-      jpr,
+      cachedJprData,
       ordinal,
       baseDate,
       placementToPointList,
     });
   }
 
-  /**
-   * キャッシュもしくは生成してjprDataを取得
-   * @param {Moment} baseDate
-   * @return {Promise<IJprData>}
-   */
-  async function getJpr(baseDate: Moment): Promise<IJprData> {
-    const cachedJprData = await jprFirestore.getJprData(baseDate);
-    if (cachedJprData) {
-      return cachedJprData;
-    }
-    return createJprDataAndSave(baseDate);
-  }
+  // /**
+  //  * キャッシュもしくは生成してjprDataを取得
+  //  * @param {Moment} baseDate
+  //  * @return {Promise<IJprData>}
+  //  */
+  // async function getJpr(baseDate: Moment): Promise<IJprData> {
+  //   // const cachedJprData = await jprFirestore.getJprData(baseDate);
+  //   // if (cachedJprData) {
+  //   //   return cachedJprData;
+  //   // }
+  //   return createJprDataAndSave(baseDate);
+  // }
 
   /**
    * jprDataを作成してキャッシュに保存
@@ -173,7 +198,7 @@ router.get("/:dateStr?", (req, res) => {
   async function getEvents(baseDate: Moment): Promise<IEvent[]> {
     const afterDate = getAfterDateThreshold(baseDate);
     const beforeDate = baseDate.unix();
-    const cCode = "JP";
+    const cCode = "US";
 
     /**
      * ページ内のevent取得
@@ -257,7 +282,7 @@ router.get("/:dateStr?", (req, res) => {
       const oneYearBeforeUnix = oneYearBefore.unix();
       // コロナ禍明け前は無視する
       // NOTE: 1年超えたら判定を消す
-      const expireColonaLimitation = 1633014000;
+      const expireColonaLimitation = 1630422000;
       if (oneYearBeforeUnix < expireColonaLimitation) {
         return expireColonaLimitation;
       }
