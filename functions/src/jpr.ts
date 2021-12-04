@@ -161,7 +161,7 @@ router.get("/:dateStr?", (req, res) => {
     }
 
     res.render("jpr/index", {
-      cachedJprData,
+      jpr: cachedJprData,
       ordinal,
       baseDate,
       placementToPointList,
