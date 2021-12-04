@@ -11,6 +11,15 @@ const entries = Object.fromEntries(
 module.exports = {
   mode: "production",
   entry: entries,
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: "ts-loader",
+        exclude: [/node_modules/, path.resolve(__dirname, "functions/src")],
+      },
+    ],
+  },
   output: {
     filename: "[name].js",
     path: path.resolve(__dirname, "public/js"),
