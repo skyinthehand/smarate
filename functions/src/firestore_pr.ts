@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 
-import { IPrData } from "./jpr";
+import { IPrData } from "./pr";
 import { Moment } from "moment";
 
 interface ISavedPrData {
