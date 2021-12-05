@@ -131,28 +131,39 @@ router.get("/check/:dateStr?", (req, res) => {
    * JPRのデータがあるかどうかのチェック
    */
   async function checkJpr() {
-    const baseDate = getBaseDate(req.params.dateStr as string);
+    const baseDate = getBaseDate(req.params.dateStr);
     // 未来日時禁止
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
-      res.send(false);
+      return false;
     }
-    const cachedJprData = await prFirestore.getPrData(
-      baseDate,
-      jprSetting.collectionName
-    );
-    if (cachedJprData) {
-      return res.send(true);
-    }
-    return res.send(false);
+    const existence: boolean = await checkPrData(jprSetting, baseDate);
+    return res.send(existence);
   }
 });
 
 /**
+ * prSettingに対応したprDataを作成済みかどうか判定して返す
+ * @param {IPrSetting} prSetting
+ * @param {Moment} baseDate
+ * @return {Promise<boolean>}
+ */
+export async function checkPrData(
+  prSetting: IPrSetting,
+  baseDate: Moment
+): Promise<boolean> {
+  const cachedJprData = await prFirestore.getPrData(
+    baseDate,
+    prSetting.collectionName
+  );
+  return !!cachedJprData;
+}
+
+/**
  * 算出基準時間の取得
- * @param {string} dateStr
+ * @param {string?} dateStr
  * @return {Moment}
  */
-function getBaseDate(dateStr: string): Moment {
+function getBaseDate(dateStr?: string): Moment {
   if (dateStr) {
     return moment(dateStr).tz("Asia/Tokyo").startOf("day");
   }
