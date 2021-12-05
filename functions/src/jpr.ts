@@ -16,7 +16,7 @@ const jprSetting: IPrSetting = {
   countryCode: "JP",
   minimumEntrantNum: 61,
   collectionName: "jprs",
-  expireColonaLimitation: 1630422000,
+  expireColonaLimitation: 1633014000,
 };
 
 router.get("/check/:dateStr?", (req, res) => {
