@@ -434,7 +434,8 @@ router.get("/:dateStr?", (req, res) => {
       return (
         event.state === EActivityState.COMPLETED &&
         event.numEntrants >= minimumEntrantNum &&
-        event.videogame.id === 1386
+        event.videogame.id === 1386 &&
+        !event.name.includes("Squad")
       );
     });
     const standings = (
