@@ -182,12 +182,11 @@ router.get("/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
-    const cachedJprData = await prFirestore.getPrData(
-      baseDate,
-      jprSetting.collectionName
+    const cachedJprData = await getPrDataFromCacheOrRunCreate(
+      jprSetting,
+      baseDate
     );
     if (!cachedJprData) {
-      createPrDataAndSave(baseDate, jprSetting);
       res.render("jpr/wait");
       return;
     }
@@ -200,18 +199,25 @@ router.get("/:dateStr?", (req, res) => {
     });
   }
 
-  // /**
-  //  * キャッシュもしくは生成してjprDataを取得
-  //  * @param {Moment} baseDate
-  //  * @return {Promise<IJprData>}
-  //  */
-  // async function getJpr(baseDate: Moment): Promise<IJprData> {
-  //   // const cachedJprData = await jprFirestore.getJprData(baseDate);
-  //   // if (cachedJprData) {
-  //   //   return cachedJprData;
-  //   // }
-  //   return createJprDataAndSave(baseDate);
-  // }
+  /**
+   * キャッシュもしくは生成してprDataを取得
+   * @param {IPrSetting} prSetting
+   * @param {Moment} baseDate
+   * @return {Promise<IPrData>}
+   */
+  async function getPrDataFromCacheOrRunCreate(
+    prSetting: IPrSetting,
+    baseDate: Moment
+  ): Promise<IPrData | null> {
+    const cachedPrData = await prFirestore.getPrData(
+      baseDate,
+      prSetting.collectionName
+    );
+    if (!cachedPrData) {
+      createPrDataAndSave(baseDate, prSetting);
+    }
+    return cachedPrData;
+  }
 
   /**
    * prDataを作成してキャッシュに保存
