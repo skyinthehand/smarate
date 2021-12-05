@@ -75,6 +75,9 @@ interface IEvent {
   name: string;
   numEntrants: number;
   state: EActivityState;
+  videogame: {
+    id: number;
+  };
   standings?: {
     nodes: IStanding[];
   };
@@ -234,6 +237,9 @@ router.get("/:dateStr?", (req, res) => {
                 name
                 numEntrants
                 state
+                videogame {
+                  id
+                }
               }
             }
           }
@@ -311,6 +317,9 @@ router.get("/:dateStr?", (req, res) => {
             id
             name
             endAt
+          }
+          videogame {
+            id
           }
           standings(query: {
             perPage: 128,
@@ -424,7 +433,8 @@ router.get("/:dateStr?", (req, res) => {
     const targetEvents = events.filter((event) => {
       return (
         event.state === EActivityState.COMPLETED &&
-        event.numEntrants >= minimumEntrantNum
+        event.numEntrants >= minimumEntrantNum &&
+        event.videogame.id === 1386
       );
     });
     const standings = (
