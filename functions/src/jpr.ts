@@ -5,7 +5,7 @@ import * as moment from "moment-timezone";
 import { Moment } from "moment";
 import * as ordinal from "ordinal";
 
-import * as jprFirestore from "./firestore_jpr";
+import * as prFirestore from "./firestore_pr";
 
 const config = functions.config();
 const smashggAuthToken = config.smashgg.authtoken as string;
@@ -18,7 +18,12 @@ interface IPlacementToPoint {
   point: number;
 }
 
-const minimumEntrantNum = 241;
+interface IPrSetting {
+  countryCode: string;
+  minimumEntrantNum: number;
+  collectionName: string;
+  expireColonaLimitation?: number;
+}
 
 const placementToPointList: IPlacementToPoint[] = [
   { placement: 1, point: 800 },
@@ -110,7 +115,14 @@ export interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
   placement: number;
 }
 
-export type IJprData = IPlayerRankWithPlacement[];
+export type IPrData = IPlayerRankWithPlacement[];
+
+const jprSetting: IPrSetting = {
+  countryCode: "JP",
+  minimumEntrantNum: 61,
+  collectionName: "jprs",
+  expireColonaLimitation: 1630422000,
+};
 
 router.get("/check/:dateStr?", (req, res) => {
   checkJpr();
@@ -124,7 +136,10 @@ router.get("/check/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.send(false);
     }
-    const cachedJprData = await jprFirestore.getJprData(baseDate);
+    const cachedJprData = await prFirestore.getPrData(
+      baseDate,
+      jprSetting.collectionName
+    );
     if (cachedJprData) {
       return res.send(true);
     }
@@ -156,9 +171,12 @@ router.get("/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
-    const cachedJprData = await jprFirestore.getJprData(baseDate);
+    const cachedJprData = await prFirestore.getPrData(
+      baseDate,
+      jprSetting.collectionName
+    );
     if (!cachedJprData) {
-      createJprDataAndSave(baseDate);
+      createPrDataAndSave(baseDate, jprSetting);
       res.render("jpr/wait");
       return;
     }
@@ -185,23 +203,35 @@ router.get("/:dateStr?", (req, res) => {
   // }
 
   /**
-   * jprDataを作成してキャッシュに保存
+   * prDataを作成してキャッシュに保存
    * @param {Moment} baseDate
+   * @param {IPrSetting} prSetting
    * @return {Promise<IJprData>}
    */
-  async function createJprDataAndSave(baseDate: Moment): Promise<IJprData> {
-    const jprData = await createJprData(baseDate);
-    await jprFirestore.setJprData(baseDate, jprData);
-    return jprData;
+  async function createPrDataAndSave(
+    baseDate: Moment,
+    prSetting: IPrSetting
+  ): Promise<IPrData> {
+    const prData = await createPrData(baseDate, prSetting);
+    await prFirestore.setPrData(baseDate, prData, prSetting.collectionName);
+    return prData;
   }
   /**
    * 対象のevent取得
    * @param {Moment} baseDate
+   * @param {IPrSetting} prSetting
+   * @return {IEvent[]}
    */
-  async function getEvents(baseDate: Moment): Promise<IEvent[]> {
-    const afterDate = getAfterDateThreshold(baseDate);
+  async function getEvents(
+    baseDate: Moment,
+    prSetting: IPrSetting
+  ): Promise<IEvent[]> {
+    const afterDate = getAfterDateThreshold(
+      baseDate,
+      prSetting.expireColonaLimitation
+    );
     const beforeDate = baseDate.unix();
-    const cCode = "US";
+    const countryCode = prSetting.countryCode;
 
     /**
      * ページ内のevent取得
@@ -214,12 +244,12 @@ router.get("/:dateStr?", (req, res) => {
         {
           query: `query TournamentsByCountry
         ($afterDate: Timestamp!, $beforeDate: Timestamp!,
-          $cCode: String!, $page: Int!) {
+          $countryCode: String!, $page: Int!) {
           tournaments(query: {
             perPage: 100
             page: $page
             filter: {
-              countryCode: $cCode
+              countryCode: $countryCode
               afterDate: $afterDate
               beforeDate: $beforeDate
               videogameIds: [
@@ -247,7 +277,7 @@ router.get("/:dateStr?", (req, res) => {
           variables: {
             afterDate,
             beforeDate,
-            cCode,
+            countryCode,
             page,
           },
         },
@@ -281,15 +311,21 @@ router.get("/:dateStr?", (req, res) => {
     /**
      * 算出対象イベントの開始日時
      * @param {Moment} baseDate
+     * @param {number?} expireColonaLimitation
      * @return {number}
      */
-    function getAfterDateThreshold(baseDate: Moment): number {
+    function getAfterDateThreshold(
+      baseDate: Moment,
+      expireColonaLimitation?: number
+    ): number {
       const oneYearBefore = baseDate.clone().subtract(1, "years");
       const oneYearBeforeUnix = oneYearBefore.unix();
       // コロナ禍明け前は無視する
       // NOTE: 1年超えたら判定を消す
-      const expireColonaLimitation = 1630422000;
-      if (oneYearBeforeUnix < expireColonaLimitation) {
+      if (
+        expireColonaLimitation &&
+        oneYearBeforeUnix < expireColonaLimitation
+      ) {
         return expireColonaLimitation;
       }
       return oneYearBeforeUnix;
@@ -300,6 +336,7 @@ router.get("/:dateStr?", (req, res) => {
    * 対象のevent結果取得
    * @param {string} eventId
    * @param {Moment} baseDate
+   * @return {IConvertedStanding[]}
    */
   async function getEventStandings(
     eventId: string,
@@ -427,13 +464,18 @@ router.get("/:dateStr?", (req, res) => {
   /**
    * smashgg叩くところ
    * @param {Moment} baseDate
+   * @param {IPrSetting} prSetting
+   * @return {IJprData}
    */
-  async function createJprData(baseDate: Moment): Promise<IJprData> {
-    const events = await getEvents(baseDate);
+  async function createPrData(
+    baseDate: Moment,
+    prSetting: IPrSetting
+  ): Promise<IPrData> {
+    const events = await getEvents(baseDate, prSetting);
     const targetEvents = events.filter((event) => {
       return (
         event.state === EActivityState.COMPLETED &&
-        event.numEntrants >= minimumEntrantNum &&
+        event.numEntrants >= prSetting.minimumEntrantNum &&
         event.videogame.id === 1386 &&
         !event.name.includes("Squad")
       );

@@ -1,41 +1,48 @@
 import * as admin from "firebase-admin";
 
-import { IJprData } from "./jpr";
+import { IPrData } from "./jpr";
 import { Moment } from "moment";
 
-interface ISavedJprData {
-  data: IJprData;
+interface ISavedPrData {
+  data: IPrData;
 }
 
 /**
  * Get jpr data
  * @param {Moment} date
+ * @param {string} collectionName
  * @return {Promise<IJprData | null>}
  */
-export async function getJprData(date: Moment): Promise<IJprData | null> {
+export async function getPrData(
+  date: Moment,
+  collectionName: string
+): Promise<IPrData | null> {
   const db = admin.firestore();
-  const jprsRef = db.collection("jprs");
+  // "jprs"
+  const jprsRef = db.collection(collectionName);
   const jprDataDoc = await jprsRef.doc(date.unix().toString()).get();
   if (!jprDataDoc.exists) {
     return null;
   }
-  const savedJprData = jprDataDoc.data() as ISavedJprData;
+  const savedJprData = jprDataDoc.data() as ISavedPrData;
   return savedJprData.data;
 }
 
 /**
  * Create jpr data
  * @param {Moment} date
- * @param {IJprData} jprData
+ * @param {IPrData} prData
+ * @param {string} collectionName
  * @return {Promise<string | null>}
  */
-export async function setJprData(
+export async function setPrData(
   date: Moment,
-  jprData: IJprData
+  prData: IPrData,
+  collectionName: string
 ): Promise<void> {
   const db = admin.firestore();
-  const jprsRef = db.collection("jprs");
+  const jprsRef = db.collection(collectionName);
   const jprDataDoc = jprsRef.doc(date.unix().toString());
-  await jprDataDoc.set({ data: jprData });
+  await jprDataDoc.set({ data: prData });
   return;
 }
