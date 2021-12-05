@@ -198,68 +198,69 @@ router.get("/:dateStr?", (req, res) => {
       placementToPointList,
     });
   }
+});
 
-  /**
-   * キャッシュもしくは生成してprDataを取得
-   * @param {IPrSetting} prSetting
-   * @param {Moment} baseDate
-   * @return {Promise<IPrData>}
-   */
-  async function getPrDataFromCacheOrRunCreate(
-    prSetting: IPrSetting,
-    baseDate: Moment
-  ): Promise<IPrData | null> {
-    const cachedPrData = await prFirestore.getPrData(
-      baseDate,
-      prSetting.collectionName
-    );
-    if (!cachedPrData) {
-      createPrDataAndSave(baseDate, prSetting);
-    }
-    return cachedPrData;
+/**
+ * キャッシュもしくは生成してprDataを取得
+ * @param {IPrSetting} prSetting
+ * @param {Moment} baseDate
+ * @return {Promise<IPrData>}
+ */
+async function getPrDataFromCacheOrRunCreate(
+  prSetting: IPrSetting,
+  baseDate: Moment
+): Promise<IPrData | null> {
+  const cachedPrData = await prFirestore.getPrData(
+    baseDate,
+    prSetting.collectionName
+  );
+  if (!cachedPrData) {
+    createPrDataAndSave(baseDate, prSetting);
   }
+  return cachedPrData;
+}
+
+/**
+ * prDataを作成してキャッシュに保存
+ * @param {Moment} baseDate
+ * @param {IPrSetting} prSetting
+ * @return {Promise<IJprData>}
+ */
+async function createPrDataAndSave(
+  baseDate: Moment,
+  prSetting: IPrSetting
+): Promise<IPrData> {
+  const prData = await createPrData(baseDate, prSetting);
+  await prFirestore.setPrData(baseDate, prData, prSetting.collectionName);
+  return prData;
+}
+/**
+ * 対象のevent取得
+ * @param {Moment} baseDate
+ * @param {IPrSetting} prSetting
+ * @return {IEvent[]}
+ */
+async function getEvents(
+  baseDate: Moment,
+  prSetting: IPrSetting
+): Promise<IEvent[]> {
+  const afterDate = getAfterDateThreshold(
+    baseDate,
+    prSetting.expireColonaLimitation
+  );
+  const beforeDate = baseDate.unix();
+  const countryCode = prSetting.countryCode;
 
   /**
-   * prDataを作成してキャッシュに保存
-   * @param {Moment} baseDate
-   * @param {IPrSetting} prSetting
-   * @return {Promise<IJprData>}
+   * ページ内のevent取得
+   * @param {number} page
+   * @return {Promise<IEvent[]>}
    */
-  async function createPrDataAndSave(
-    baseDate: Moment,
-    prSetting: IPrSetting
-  ): Promise<IPrData> {
-    const prData = await createPrData(baseDate, prSetting);
-    await prFirestore.setPrData(baseDate, prData, prSetting.collectionName);
-    return prData;
-  }
-  /**
-   * 対象のevent取得
-   * @param {Moment} baseDate
-   * @param {IPrSetting} prSetting
-   * @return {IEvent[]}
-   */
-  async function getEvents(
-    baseDate: Moment,
-    prSetting: IPrSetting
-  ): Promise<IEvent[]> {
-    const afterDate = getAfterDateThreshold(
-      baseDate,
-      prSetting.expireColonaLimitation
-    );
-    const beforeDate = baseDate.unix();
-    const countryCode = prSetting.countryCode;
-
-    /**
-     * ページ内のevent取得
-     * @param {number} page
-     * @return {Promise<IEvent[]>}
-     */
-    async function getEventsInPage(page: number): Promise<IEvent[]> {
-      const eventRes = await axios.post(
-        "https://api.smash.gg/gql/alpha",
-        {
-          query: `query TournamentsByCountry
+  async function getEventsInPage(page: number): Promise<IEvent[]> {
+    const eventRes = await axios.post(
+      "https://api.smash.gg/gql/alpha",
+      {
+        query: `query TournamentsByCountry
         ($afterDate: Timestamp!, $beforeDate: Timestamp!,
           $countryCode: String!, $page: Int!) {
           tournaments(query: {
@@ -291,78 +292,75 @@ router.get("/:dateStr?", (req, res) => {
             }
           }
         }`,
-          variables: {
-            afterDate,
-            beforeDate,
-            countryCode,
-            page,
-          },
+        variables: {
+          afterDate,
+          beforeDate,
+          countryCode,
+          page,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${smashggAuthToken}`,
-          },
-        }
-      );
-      const tournaments: Required<ITournament>[] =
-        eventRes.data.data.tournaments.nodes;
-      return tournaments
-        .map((tournament) => {
-          return tournament.events;
-        })
-        .flat();
-    }
-
-    const events: IEvent[] = [];
-    // 最大でも100ページまで
-    for (let page = 1; page <= 1000; page++) {
-      const eventsInPage = await getEventsInPage(page);
-      events.push(...eventsInPage);
-      if (eventsInPage.length < 1) {
-        break;
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${smashggAuthToken}`,
+        },
       }
-    }
+    );
+    const tournaments: Required<ITournament>[] =
+      eventRes.data.data.tournaments.nodes;
+    return tournaments
+      .map((tournament) => {
+        return tournament.events;
+      })
+      .flat();
+  }
 
-    return events;
-
-    /**
-     * 算出対象イベントの開始日時
-     * @param {Moment} baseDate
-     * @param {number?} expireColonaLimitation
-     * @return {number}
-     */
-    function getAfterDateThreshold(
-      baseDate: Moment,
-      expireColonaLimitation?: number
-    ): number {
-      const oneYearBefore = baseDate.clone().subtract(1, "years");
-      const oneYearBeforeUnix = oneYearBefore.unix();
-      // コロナ禍明け前は無視する
-      // NOTE: 1年超えたら判定を消す
-      if (
-        expireColonaLimitation &&
-        oneYearBeforeUnix < expireColonaLimitation
-      ) {
-        return expireColonaLimitation;
-      }
-      return oneYearBeforeUnix;
+  const events: IEvent[] = [];
+  // 最大でも100ページまで
+  for (let page = 1; page <= 1000; page++) {
+    const eventsInPage = await getEventsInPage(page);
+    events.push(...eventsInPage);
+    if (eventsInPage.length < 1) {
+      break;
     }
   }
 
+  return events;
+
   /**
-   * 対象のevent結果取得
-   * @param {string} eventId
+   * 算出対象イベントの開始日時
    * @param {Moment} baseDate
-   * @return {IConvertedStanding[]}
+   * @param {number?} expireColonaLimitation
+   * @return {number}
    */
-  async function getEventStandings(
-    eventId: string,
-    baseDate: Moment
-  ): Promise<IConvertedStanding[]> {
-    const standingsRes = await axios.post(
-      "https://api.smash.gg/gql/alpha",
-      {
-        query: `query EventStandings($eventId: ID!) {
+  function getAfterDateThreshold(
+    baseDate: Moment,
+    expireColonaLimitation?: number
+  ): number {
+    const oneYearBefore = baseDate.clone().subtract(1, "years");
+    const oneYearBeforeUnix = oneYearBefore.unix();
+    // コロナ禍明け前は無視する
+    // NOTE: 1年超えたら判定を消す
+    if (expireColonaLimitation && oneYearBeforeUnix < expireColonaLimitation) {
+      return expireColonaLimitation;
+    }
+    return oneYearBeforeUnix;
+  }
+}
+
+/**
+ * 対象のevent結果取得
+ * @param {string} eventId
+ * @param {Moment} baseDate
+ * @return {IConvertedStanding[]}
+ */
+async function getEventStandings(
+  eventId: string,
+  baseDate: Moment
+): Promise<IConvertedStanding[]> {
+  const standingsRes = await axios.post(
+    "https://api.smash.gg/gql/alpha",
+    {
+      query: `query EventStandings($eventId: ID!) {
         event(id: $eventId) {
           id
           name
@@ -396,186 +394,185 @@ router.get("/:dateStr?", (req, res) => {
           }
         }
       }`,
-        variables: {
-          eventId,
-        },
+      variables: {
+        eventId,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${smashggAuthToken}`,
-        },
-      }
-    );
-    const tournamentName = standingsRes.data.data.event.tournament.name;
-    const endAt = standingsRes.data.data.event.tournament.endAt;
-    const eventName = standingsRes.data.data.event.name;
-    const numEntrants = standingsRes.data.data.event.numEntrants;
-    const standings = standingsRes.data.data.event.standings.nodes;
-    return standings
-      .filter((standing: IStanding) => {
-        return standing.entrant.participants[0].player.user;
-      })
-      .map((standing: IStanding) => {
-        const point = placementToGradientPoint(
-          standing.placement,
-          placementToPointList,
-          numEntrants,
-          baseDate
-        );
-        return {
-          id: standing.entrant.participants[0].player.user.id,
-          name: standing.entrant.name,
-          point,
-          placement: standing.placement,
-          tournamentName: tournamentName,
-          eventName: eventName,
-        };
-      });
-
-    /**
-     * 順位をポイントに変換
-     * @param {number} placement
-     * @param {IPlacementToPoint[]} placementToPointList
-     * @param {number} numEntrants
-     * @param {Moment} baseDate
-     * @return {number}
-     */
-    function placementToGradientPoint(
-      placement: number,
-      placementToPointList: IPlacementToPoint[],
-      numEntrants: number,
-      baseDate: Moment
-    ): number {
-      const originalPoint = getPointFromPlacement(
-        placement,
-        placementToPointList
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${smashggAuthToken}`,
+      },
+    }
+  );
+  const tournamentName = standingsRes.data.data.event.tournament.name;
+  const endAt = standingsRes.data.data.event.tournament.endAt;
+  const eventName = standingsRes.data.data.event.name;
+  const numEntrants = standingsRes.data.data.event.numEntrants;
+  const standings = standingsRes.data.data.event.standings.nodes;
+  return standings
+    .filter((standing: IStanding) => {
+      return standing.entrant.participants[0].player.user;
+    })
+    .map((standing: IStanding) => {
+      const point = placementToGradientPoint(
+        standing.placement,
+        placementToPointList,
+        numEntrants,
+        baseDate
       );
-      const oldGradient = (baseDate.unix() - endAt) / (365 * 24 * 60 * 60);
-      return originalPoint * numEntrants * Math.pow(Math.E, 1 - oldGradient);
-    }
+      return {
+        id: standing.entrant.participants[0].player.user.id,
+        name: standing.entrant.name,
+        point,
+        placement: standing.placement,
+        tournamentName: tournamentName,
+        eventName: eventName,
+      };
+    });
 
-    /**
-     * 順位以下で最大のポイントを取得
-     * @param {number} placement
-     * @param {IPlacementToPoint[]} placementToPointList
-     * @return {number}
-     */
-    function getPointFromPlacement(
-      placement: number,
-      placementToPointList: IPlacementToPoint[]
-    ): number {
-      const underStandingPoints = placementToPointList
-        .filter((placementToPoint) => {
-          return placementToPoint.placement >= placement;
-        })
-        .sort((a, b) => {
-          return -(a.point - b.point);
-        });
-      if (underStandingPoints.length < 1) {
-        return 0;
-      }
-      return underStandingPoints[0].point;
-    }
+  /**
+   * 順位をポイントに変換
+   * @param {number} placement
+   * @param {IPlacementToPoint[]} placementToPointList
+   * @param {number} numEntrants
+   * @param {Moment} baseDate
+   * @return {number}
+   */
+  function placementToGradientPoint(
+    placement: number,
+    placementToPointList: IPlacementToPoint[],
+    numEntrants: number,
+    baseDate: Moment
+  ): number {
+    const originalPoint = getPointFromPlacement(
+      placement,
+      placementToPointList
+    );
+    const oldGradient = (baseDate.unix() - endAt) / (365 * 24 * 60 * 60);
+    return originalPoint * numEntrants * Math.pow(Math.E, 1 - oldGradient);
   }
 
   /**
-   * smashgg叩くところ
-   * @param {Moment} baseDate
-   * @param {IPrSetting} prSetting
-   * @return {IJprData}
+   * 順位以下で最大のポイントを取得
+   * @param {number} placement
+   * @param {IPlacementToPoint[]} placementToPointList
+   * @return {number}
    */
-  async function createPrData(
-    baseDate: Moment,
-    prSetting: IPrSetting
-  ): Promise<IPrData> {
-    const events = await getEvents(baseDate, prSetting);
-    const targetEvents = events.filter((event) => {
-      return (
-        event.state === EActivityState.COMPLETED &&
-        event.numEntrants >= prSetting.minimumEntrantNum &&
-        event.videogame.id === 1386 &&
-        !event.name.includes("Squad")
-      );
-    });
-    const standings = (
-      await Promise.all(
-        targetEvents.map(async (event) => {
-          return await getEventStandings(event.id, baseDate);
-        })
-      )
-    ).flat();
+  function getPointFromPlacement(
+    placement: number,
+    placementToPointList: IPlacementToPoint[]
+  ): number {
+    const underStandingPoints = placementToPointList
+      .filter((placementToPoint) => {
+        return placementToPoint.placement >= placement;
+      })
+      .sort((a, b) => {
+        return -(a.point - b.point);
+      });
+    if (underStandingPoints.length < 1) {
+      return 0;
+    }
+    return underStandingPoints[0].point;
+  }
+}
 
-    let prevPlacement = 0;
-    let prevPoint = 0;
-    const jpr = standings
-      .reduce(
-        (
-          playerRankList: IPlayerRank[],
-          convertedStanding: IConvertedStanding
-        ): IPlayerRank[] => {
-          const playerRank = playerRankList.find((pr) => {
-            return pr.id === convertedStanding.id;
-          });
-          if (playerRank) {
-            playerRank.standings.push(convertedStanding);
-            return playerRankList;
-          }
-          playerRankList.push({
-            id: convertedStanding.id,
-            name: convertedStanding.name,
-            standings: [convertedStanding],
-          });
+/**
+ * smashgg叩くところ
+ * @param {Moment} baseDate
+ * @param {IPrSetting} prSetting
+ * @return {IJprData}
+ */
+async function createPrData(
+  baseDate: Moment,
+  prSetting: IPrSetting
+): Promise<IPrData> {
+  const events = await getEvents(baseDate, prSetting);
+  const targetEvents = events.filter((event) => {
+    return (
+      event.state === EActivityState.COMPLETED &&
+      event.numEntrants >= prSetting.minimumEntrantNum &&
+      event.videogame.id === 1386 &&
+      !event.name.includes("Squad")
+    );
+  });
+  const standings = (
+    await Promise.all(
+      targetEvents.map(async (event) => {
+        return await getEventStandings(event.id, baseDate);
+      })
+    )
+  ).flat();
+
+  let prevPlacement = 0;
+  let prevPoint = 0;
+  const jpr = standings
+    .reduce(
+      (
+        playerRankList: IPlayerRank[],
+        convertedStanding: IConvertedStanding
+      ): IPlayerRank[] => {
+        const playerRank = playerRankList.find((pr) => {
+          return pr.id === convertedStanding.id;
+        });
+        if (playerRank) {
+          playerRank.standings.push(convertedStanding);
           return playerRankList;
-        },
-        []
-      )
-      .map((playerRank: IPlayerRank): Required<IPlayerRank> => {
-        const topTournamentsNum = 4;
-        if (playerRank.standings.length < topTournamentsNum) {
-          return Object.assign(playerRank, {
-            point: summerizePlayerPoint(playerRank.standings),
-          });
         }
-        const topStandings = playerRank.standings
-          .sort((a: IConvertedStanding, b: IConvertedStanding) => {
-            return -(a.point - b.point);
-          })
-          .slice(0, topTournamentsNum);
-        playerRank.standings = topStandings;
+        playerRankList.push({
+          id: convertedStanding.id,
+          name: convertedStanding.name,
+          standings: [convertedStanding],
+        });
+        return playerRankList;
+      },
+      []
+    )
+    .map((playerRank: IPlayerRank): Required<IPlayerRank> => {
+      const topTournamentsNum = 4;
+      if (playerRank.standings.length < topTournamentsNum) {
         return Object.assign(playerRank, {
           point: summerizePlayerPoint(playerRank.standings),
         });
-      })
-      .sort((a: Required<IPlayerRank>, b: Required<IPlayerRank>) => {
-        return -(a.point - b.point);
-      })
-      .map((playerRank, index): IPlayerRankWithPlacement => {
-        // TODO: マジックナンバーの削除
-        // 0.01以内は同じ順位と見なす
-        if (Math.abs(playerRank.point - prevPoint) < 0.01) {
-          prevPoint = playerRank.point;
-          return Object.assign(playerRank, {
-            placement: prevPlacement,
-          });
-        }
+      }
+      const topStandings = playerRank.standings
+        .sort((a: IConvertedStanding, b: IConvertedStanding) => {
+          return -(a.point - b.point);
+        })
+        .slice(0, topTournamentsNum);
+      playerRank.standings = topStandings;
+      return Object.assign(playerRank, {
+        point: summerizePlayerPoint(playerRank.standings),
+      });
+    })
+    .sort((a: Required<IPlayerRank>, b: Required<IPlayerRank>) => {
+      return -(a.point - b.point);
+    })
+    .map((playerRank, index): IPlayerRankWithPlacement => {
+      // TODO: マジックナンバーの削除
+      // 0.01以内は同じ順位と見なす
+      if (Math.abs(playerRank.point - prevPoint) < 0.01) {
         prevPoint = playerRank.point;
-        prevPlacement = index + 1;
         return Object.assign(playerRank, {
           placement: prevPlacement,
         });
+      }
+      prevPoint = playerRank.point;
+      prevPlacement = index + 1;
+      return Object.assign(playerRank, {
+        placement: prevPlacement,
       });
+    });
 
-    return jpr;
+  return jpr;
 
-    /**
-     * 順位ポイントの合計を返す
-     * @param {IConvertedStanding[]} standings
-     * @return {number}
-     */
-    function summerizePlayerPoint(standings: IConvertedStanding[]): number {
-      return standings.reduce((sumPoint, standing) => {
-        return sumPoint + standing.point;
-      }, 0);
-    }
+  /**
+   * 順位ポイントの合計を返す
+   * @param {IConvertedStanding[]} standings
+   * @return {number}
+   */
+  function summerizePlayerPoint(standings: IConvertedStanding[]): number {
+    return standings.reduce((sumPoint, standing) => {
+      return sumPoint + standing.point;
+    }, 0);
   }
-});
+}
