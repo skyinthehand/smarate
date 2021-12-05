@@ -268,7 +268,7 @@ router.get("/:dateStr?", (req, res) => {
 
     const events: IEvent[] = [];
     // 最大でも100ページまで
-    for (let page = 1; page <= 100; page++) {
+    for (let page = 1; page <= 1000; page++) {
       const eventsInPage = await getEventsInPage(page);
       events.push(...eventsInPage);
       if (eventsInPage.length < 1) {
