@@ -171,7 +171,7 @@ export async function getPrDataFromCacheOrRunCreate(
  * prDataを作成してキャッシュに保存
  * @param {Moment} baseDate
  * @param {IPrSetting} prSetting
- * @return {Promise<IJprData>}
+ * @return {Promise<IPrData>}
  */
 async function createPrDataAndSave(
   baseDate: Moment,
