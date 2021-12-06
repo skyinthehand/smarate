@@ -86,19 +86,26 @@
       </div>
       <h4 class="mb-3">算出日時　<%= baseDate.format("YYYY年MM月DD日") %></h4>
       <% for (var pd of pr) { %>
-      <div class="card my-3">
-        <h5 class="card-title px-1">
-          <%= ordinal(pd.placement) %> <%= pd.name %> <%= Math.round(pd.point).toLocaleString()
-          %>pt
-        </h5>
-        <ul class="list-group list-group-flush">
-          <% for (var standing of pd.standings) { %>
-          <li class="list-group-item">
-            <%= ordinal(standing.placement) %> <%= standing.tournamentName %>
-            <%= Math.round(standing.point).toLocaleString() %>pt
-          </li>
-          <% } %>
-        </ul>
+      <div class="card my-1">
+        <div class="accordion-item">
+          <h5 class="accordion-header card-title px-1" id="headingPd<%= pd.placement %>">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePd<%= pd.placement %>" aria-expanded="false" aria-controls="collapsePd<%= pd.placement %>">
+              <%= ordinal(pd.placement) %> <%= pd.name %> <%= Math.round(pd.point).toLocaleString() %>pt
+            </button>
+          </h5>
+          <div id="collapsePd<%= pd.placement %>" class="accordion-collapse collapse" aria-labelledby="headingPd<%= pd.placement %>" data-bs-parent="#accordionDesc">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <% for (var standing of pd.standings) { %>
+                <li class="list-group-item">
+                  <%= ordinal(standing.placement) %> <%= standing.tournamentName %>
+                  <%= Math.round(standing.point).toLocaleString() %>pt
+                </li>
+                <% } %>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
       <% } %>
     </main>
