@@ -124,7 +124,7 @@
                   &emsp;<%= moment(standing.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
                   &nbsp;<span class="fw-bolder"><%= standing.tournamentName %></span>
                   &nbsp;<%= standing.eventName %>
-                  &emsp;<span class="fw-bolder"><%= Math.round(standing.point).toLocaleString() %>pt</span>
+                  &emsp;<%= Math.round(standing.point).toLocaleString() %>pt
                 </li>
                 <% } %>
               </ul>
