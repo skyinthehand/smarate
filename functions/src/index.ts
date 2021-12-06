@@ -9,6 +9,7 @@ import * as firestore from "./firestore";
 // import { router as oauth } from "./oauth";
 // import { router as match } from "./match";
 import { router as jpr } from "./jpr";
+import { router as uspr } from "./uspr";
 
 const config = functions.config();
 const twitterConfig: IStrategyOption = {
@@ -109,6 +110,7 @@ app.get("/", (req, res) => {
 // });
 
 app.use("/jpr", jpr);
+app.use("/uspr", uspr);
 
 // app.use("/oauth", oauth);
 

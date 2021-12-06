@@ -12,44 +12,44 @@ import {
 // eslint-disable-next-line new-cap
 export const router = express.Router();
 
-const jprSetting: IPrSetting = {
-  countryCode: "JP",
-  minimumEntrantNum: 61,
-  collectionName: "jprs",
-  expireColonaLimitation: 1633014000,
+const usprSetting: IPrSetting = {
+  countryCode: "US",
+  minimumEntrantNum: 241,
+  collectionName: "usprs",
+  expireColonaLimitation: 1630422000,
 };
 
-router.get("/:dateStr?/check", (req, res) => {
-  checkJpr();
+router.get("/check/:dateStr?", (req, res) => {
+  checkUspr();
 
   /**
-   * JPRのデータがあるかどうかのチェック
+   * USPRのデータがあるかどうかのチェック
    */
-  async function checkJpr() {
+  async function checkUspr() {
     const baseDate = getBaseDate(req.params.dateStr);
     // 未来日時禁止
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       return false;
     }
-    const existence: boolean = await checkPrData(jprSetting, baseDate);
+    const existence: boolean = await checkPrData(usprSetting, baseDate);
     return res.send(existence);
   }
 });
 
 router.get("/:dateStr?", (req, res) => {
-  renderJpr();
+  renderUspr();
 
   /**
-   * JPRのレンダリング
+   * USPRのレンダリング
    */
-  async function renderJpr() {
+  async function renderUspr() {
     const baseDate = getBaseDate(req.params.dateStr as string);
     // 未来日時禁止
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
     const cachedJprData = await getPrDataFromCacheOrRunCreate(
-      jprSetting,
+      usprSetting,
       baseDate
     );
     if (!cachedJprData) {

@@ -19,3 +19,4 @@ yarn.lock
 .firebaserc
 .firebase
 .github/workflows/firebase*
+/public/js/
