@@ -90,6 +90,7 @@ interface IEvent {
 }
 
 interface IExpandedEvent extends IEvent {
+  tournamentName: string;
   endAt: number;
 }
 
@@ -269,6 +270,7 @@ async function getEvents(
         return tournament.events.map((event) => {
           const expandedEvent: IExpandedEvent = {
             ...event,
+            tournamentName: tournament.name,
             endAt: tournament.endAt,
           };
           return expandedEvent;
