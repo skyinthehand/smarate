@@ -84,14 +84,14 @@
         </p>
       </div>
       <h4 class="mb-3">算出日時　<%= baseDate.format("YYYY年MM月DD日") %></h4>
-      <% for (var pr of jpr) { %>
+      <% for (var pd of pr) { %>
       <div class="card my-3">
         <h5 class="card-title px-1">
-          <%= ordinal(pr.placement) %> <%= pr.name %> <%= Math.round(pr.point).toLocaleString()
+          <%= ordinal(pd.placement) %> <%= pd.name %> <%= Math.round(pd.point).toLocaleString()
           %>pt
         </h5>
         <ul class="list-group list-group-flush">
-          <% for (var standing of pr.standings) { %>
+          <% for (var standing of pd.standings) { %>
           <li class="list-group-item">
             <%= ordinal(standing.placement) %> <%= standing.tournamentName %>
             <%= Math.round(standing.point).toLocaleString() %>pt

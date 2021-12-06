@@ -48,17 +48,17 @@ router.get("/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
-    const cachedJprData = await getPrDataFromCacheOrRunCreate(
+    const cachedPrData = await getPrDataFromCacheOrRunCreate(
       usprSetting,
       baseDate
     );
-    if (!cachedJprData) {
+    if (!cachedPrData) {
       res.render("jpr/wait");
       return;
     }
 
     res.render("jpr/index", {
-      jpr: cachedJprData,
+      pr: cachedPrData,
       ordinal,
       baseDate,
       placementToPointList,
