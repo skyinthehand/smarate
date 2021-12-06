@@ -110,10 +110,9 @@
         <div class="accordion-item">
           <h5 class="accordion-header card-title px-1" id="headingPd<%= index %>">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePd<%= index %>" aria-expanded="false" aria-controls="collapsePd<%= index %>">
-              <div class="d-flex justify-content-between w-100 me-2 fw-bold">
-                <div><%= ordinal(pd.placement) %> <%= pd.name %></div>
-                <div><%= Math.round(pd.point).toLocaleString() %>pt</div>
-              </div>
+              <span class="fw-bold"><%= ordinal(pd.placement) %>
+              &nbsp;<%= pd.name %></span>
+              &emsp;<%= Math.round(pd.point).toLocaleString() %>pt
             </button>
           </h5>
           <div id="collapsePd<%= index %>" class="accordion-collapse collapse" aria-labelledby="headingPd<%= index %>" data-bs-parent="#accordionDesc">
@@ -122,10 +121,10 @@
                 <% for (var standing of pd.standings) { %>
                 <li class="list-group-item">
                   <span class="fw-bolder"><%= ordinal(standing.placement) %></span>
-                  <%= moment(standing.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
-                  <span class="fw-bolder"><%= standing.tournamentName %></span>
-                  <%= standing.eventName %>
-                  <span class="fw-bolder"><%= Math.round(standing.point).toLocaleString() %>pt</span>
+                  &emsp;<%= moment(standing.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
+                  &nbsp;<span class="fw-bolder"><%= standing.tournamentName %></span>
+                  &nbsp;<%= standing.eventName %>
+                  &emsp;<span class="fw-bolder"><%= Math.round(standing.point).toLocaleString() %>pt</span>
                 </li>
                 <% } %>
               </ul>
