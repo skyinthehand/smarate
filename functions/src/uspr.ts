@@ -53,11 +53,11 @@ router.get("/:dateStr?", (req, res) => {
       baseDate
     );
     if (!cachedPrData) {
-      res.render("jpr/wait");
+      res.render("pr/wait");
       return;
     }
 
-    res.render("jpr/index", {
+    res.render("pr/index", {
       pr: cachedPrData,
       ordinal,
       baseDate,
