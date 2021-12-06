@@ -103,6 +103,7 @@ interface IConvertedStanding {
   placement: number;
   tournamentName: string;
   eventName: string;
+  endAt: number;
 }
 
 export interface IPlayerRank {
@@ -374,6 +375,7 @@ async function getEventStandings(
         placement: standing.placement,
         tournamentName: tournamentName,
         eventName: eventName,
+        endAt,
       };
     });
 

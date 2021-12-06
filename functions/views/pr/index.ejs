@@ -98,7 +98,7 @@
               <ul class="list-group list-group-flush">
                 <% for (var standing of pd.standings) { %>
                 <li class="list-group-item">
-                  <%= ordinal(standing.placement) %> <%= standing.tournamentName %> <%= standing.eventName %>
+                  <%= ordinal(standing.placement) %> <%= moment(standing.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %> <%= standing.tournamentName %> <%= standing.eventName %>
                   <%= Math.round(standing.point).toLocaleString() %>pt
                 </li>
                 <% } %>
