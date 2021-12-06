@@ -4,7 +4,7 @@ import { ISavedPrData } from "./pr";
 import { Moment } from "moment";
 
 /**
- * Get jpr data
+ * Get pr data
  * @param {Moment} date
  * @param {string} collectionName
  * @return {Promise<ISavedPrData | null>}
@@ -14,18 +14,17 @@ export async function getPrData(
   collectionName: string
 ): Promise<ISavedPrData | null> {
   const db = admin.firestore();
-  // "jprs"
-  const jprsRef = db.collection(collectionName);
-  const jprDataDoc = await jprsRef.doc(date.unix().toString()).get();
-  if (!jprDataDoc.exists) {
+  const prsRef = db.collection(collectionName);
+  const prDataDoc = await prsRef.doc(date.unix().toString()).get();
+  if (!prDataDoc.exists) {
     return null;
   }
-  const savedJprData = jprDataDoc.data() as ISavedPrData;
-  return savedJprData;
+  const savedPrData = prDataDoc.data() as ISavedPrData;
+  return savedPrData;
 }
 
 /**
- * Create jpr data
+ * Create pr data
  * @param {Moment} date
  * @param {ISavedPrData} savedPrData
  * @param {string} collectionName
@@ -37,8 +36,8 @@ export async function setPrData(
   collectionName: string
 ): Promise<void> {
   const db = admin.firestore();
-  const jprsRef = db.collection(collectionName);
-  const jprDataDoc = jprsRef.doc(date.unix().toString());
-  await jprDataDoc.set(savedPrData);
+  const prsRef = db.collection(collectionName);
+  const prDataDoc = prsRef.doc(date.unix().toString());
+  await prDataDoc.set(savedPrData);
   return;
 }

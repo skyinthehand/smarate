@@ -138,11 +138,11 @@ export async function checkPrData(
   prSetting: IPrSetting,
   baseDate: Moment
 ): Promise<boolean> {
-  const cachedJprData = await prFirestore.getPrData(
+  const cachedPrData = await prFirestore.getPrData(
     baseDate,
     prSetting.collectionName
   );
-  return !!cachedJprData;
+  return !!cachedPrData;
 }
 
 /**
