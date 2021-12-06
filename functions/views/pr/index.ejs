@@ -31,12 +31,12 @@
               </div>
             </div>
             <div class="accordion-item">
-              <h2 class="accordion-header" id="headingTargetTournament">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTargetTournament" aria-expanded="false" aria-controls="collapseTargetTournament">
-                  対象大会
+              <h2 class="accordion-header" id="headingTargetTournamentCondition">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTargetTournamentCondition" aria-expanded="false" aria-controls="collapseTargetTournamentCondition">
+                  対象大会条件
                 </button>
               </h2>
-              <div id="collapseTargetTournament" class="accordion-collapse collapse" aria-labelledby="headingTargetTournament" data-bs-parent="#accordionDesc">
+              <div id="collapseTargetTournamentCondition" class="accordion-collapse collapse" aria-labelledby="headingTargetTournamentCondition" data-bs-parent="#accordionDesc">
                 <div class="accordion-body">
                   暫定的なコロナ禍明けである<%= moment(prSetting.expireColonaLimitation, "X").tz("Asia/Tokyo").format("YYYY年MM月DD日") %>以降に開催された、
                   smash.ggに登録されている<%= prSetting.minimumEntrantNum %>人以上の大会を対象にしています。
