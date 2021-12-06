@@ -62,7 +62,7 @@ router.get("/:dateStr?", (req, res) => {
     }
 
     res.render("pr/index", {
-      pr: cachedPrData,
+      pr: cachedPrData.data.prData,
       prSetting: jprSetting,
       moment,
       ordinal,
