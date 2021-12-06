@@ -18,6 +18,12 @@ export interface IPrSetting {
   minimumEntrantNum: number;
   collectionName: string;
   expireColonaLimitation?: number;
+  displaySetting: IPrDisplaySetting;
+}
+
+interface IPrDisplaySetting {
+  countryName: string;
+  prName: string;
 }
 
 export const placementToPointList: IPlacementToPoint[] = [
@@ -83,6 +89,11 @@ interface IEvent {
   };
 }
 
+interface IExpandedEvent extends IEvent {
+  tournamentName: string;
+  endAt: number;
+}
+
 interface ITournament {
   id: string;
   name: string;
@@ -97,20 +108,26 @@ interface IConvertedStanding {
   placement: number;
   tournamentName: string;
   eventName: string;
+  endAt: number;
 }
 
-export interface IPlayerRank {
+interface IPlayerRank {
   id: string;
   name: string;
   point?: number;
   standings: IConvertedStanding[];
 }
 
-export interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
+interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
   placement: number;
 }
 
-export type IPrData = IPlayerRankWithPlacement[];
+export interface ISavedPrData {
+  data: {
+    events: IExpandedEvent[];
+    prData: IPlayerRankWithPlacement[];
+  };
+}
 
 /**
  * prSettingに対応したprDataを作成済みかどうか判定して返す
@@ -122,11 +139,11 @@ export async function checkPrData(
   prSetting: IPrSetting,
   baseDate: Moment
 ): Promise<boolean> {
-  const cachedJprData = await prFirestore.getPrData(
+  const cachedPrData = await prFirestore.getPrData(
     baseDate,
     prSetting.collectionName
   );
-  return !!cachedJprData;
+  return !!cachedPrData;
 }
 
 /**
@@ -150,7 +167,7 @@ export function getBaseDate(dateStr?: string): Moment {
 export async function getPrDataFromCacheOrRunCreate(
   prSetting: IPrSetting,
   baseDate: Moment
-): Promise<IPrData | null> {
+): Promise<ISavedPrData | null> {
   const cachedPrData = await prFirestore.getPrData(
     baseDate,
     prSetting.collectionName
@@ -165,12 +182,12 @@ export async function getPrDataFromCacheOrRunCreate(
  * prDataを作成してキャッシュに保存
  * @param {Moment} baseDate
  * @param {IPrSetting} prSetting
- * @return {Promise<IJprData>}
+ * @return {Promise<IPrData>}
  */
 async function createPrDataAndSave(
   baseDate: Moment,
   prSetting: IPrSetting
-): Promise<IPrData> {
+): Promise<ISavedPrData> {
   const prData = await createPrData(baseDate, prSetting);
   await prFirestore.setPrData(baseDate, prData, prSetting.collectionName);
   return prData;
@@ -179,12 +196,12 @@ async function createPrDataAndSave(
  * 対象のevent取得
  * @param {Moment} baseDate
  * @param {IPrSetting} prSetting
- * @return {IEvent[]}
+ * @return {IExpandedEvent[]}
  */
 async function getEvents(
   baseDate: Moment,
   prSetting: IPrSetting
-): Promise<IEvent[]> {
+): Promise<IExpandedEvent[]> {
   const afterDate = getAfterDateThreshold(
     baseDate,
     prSetting.expireColonaLimitation
@@ -195,9 +212,9 @@ async function getEvents(
   /**
    * ページ内のevent取得
    * @param {number} page
-   * @return {Promise<IEvent[]>}
+   * @return {Promise<IExpandedEvent[]>}
    */
-  async function getEventsInPage(page: number): Promise<IEvent[]> {
+  async function getEventsInPage(page: number): Promise<IExpandedEvent[]> {
     const eventRes = await axios.post(
       "https://api.smash.gg/gql/alpha",
       {
@@ -250,12 +267,19 @@ async function getEvents(
       eventRes.data.data.tournaments.nodes;
     return tournaments
       .map((tournament) => {
-        return tournament.events;
+        return tournament.events.map((event) => {
+          const expandedEvent: IExpandedEvent = {
+            ...event,
+            tournamentName: tournament.name,
+            endAt: tournament.endAt,
+          };
+          return expandedEvent;
+        });
       })
       .flat();
   }
 
-  const events: IEvent[] = [];
+  const events: IExpandedEvent[] = [];
   // 最大でも100ページまで
   for (let page = 1; page <= 1000; page++) {
     const eventsInPage = await getEventsInPage(page);
@@ -368,6 +392,7 @@ async function getEventStandings(
         placement: standing.placement,
         tournamentName: tournamentName,
         eventName: eventName,
+        endAt,
       };
     });
 
@@ -421,12 +446,12 @@ async function getEventStandings(
  * smashgg叩くところ
  * @param {Moment} baseDate
  * @param {IPrSetting} prSetting
- * @return {IJprData}
+ * @return {ISavedPrData}
  */
 async function createPrData(
   baseDate: Moment,
   prSetting: IPrSetting
-): Promise<IPrData> {
+): Promise<ISavedPrData> {
   const events = await getEvents(baseDate, prSetting);
   const targetEvents = events.filter((event) => {
     return (
@@ -446,7 +471,7 @@ async function createPrData(
 
   let prevPlacement = 0;
   let prevPoint = 0;
-  const jpr = standings
+  const prData = standings
     .reduce(
       (
         playerRankList: IPlayerRank[],
@@ -504,7 +529,9 @@ async function createPrData(
       });
     });
 
-  return jpr;
+  return {
+    data: { events: targetEvents, prData },
+  };
 
   /**
    * 順位ポイントの合計を返す

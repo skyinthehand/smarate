@@ -17,6 +17,10 @@ const jprSetting: IPrSetting = {
   minimumEntrantNum: 61,
   collectionName: "jprs",
   expireColonaLimitation: 1633014000,
+  displaySetting: {
+    countryName: "Japan",
+    prName: "JJPR",
+  },
 };
 
 router.get("/:dateStr?/check", (req, res) => {
@@ -48,17 +52,20 @@ router.get("/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
-    const cachedJprData = await getPrDataFromCacheOrRunCreate(
+    const cachedPrData = await getPrDataFromCacheOrRunCreate(
       jprSetting,
       baseDate
     );
-    if (!cachedJprData) {
-      res.render("jpr/wait");
+    if (!cachedPrData) {
+      res.render("pr/wait");
       return;
     }
 
-    res.render("jpr/index", {
-      jpr: cachedJprData,
+    res.render("pr/index", {
+      pr: cachedPrData.data.prData,
+      events: cachedPrData.data.events,
+      prSetting: jprSetting,
+      moment,
       ordinal,
       baseDate,
       placementToPointList,

@@ -17,9 +17,13 @@ const usprSetting: IPrSetting = {
   minimumEntrantNum: 241,
   collectionName: "usprs",
   expireColonaLimitation: 1630422000,
+  displaySetting: {
+    countryName: "UnitedStates",
+    prName: "JUSPR",
+  },
 };
 
-router.get("/check/:dateStr?", (req, res) => {
+router.get("/:dateStr?/check", (req, res) => {
   checkUspr();
 
   /**
@@ -48,17 +52,20 @@ router.get("/:dateStr?", (req, res) => {
     if (baseDate.isAfter(moment().tz("Asia/Tokyo"))) {
       res.redirect(req.baseUrl);
     }
-    const cachedJprData = await getPrDataFromCacheOrRunCreate(
+    const cachedPrData = await getPrDataFromCacheOrRunCreate(
       usprSetting,
       baseDate
     );
-    if (!cachedJprData) {
-      res.render("jpr/wait");
+    if (!cachedPrData) {
+      res.render("pr/wait");
       return;
     }
 
-    res.render("jpr/index", {
-      jpr: cachedJprData,
+    res.render("pr/index", {
+      pr: cachedPrData.data.prData,
+      events: cachedPrData.data.events,
+      prSetting: usprSetting,
+      moment,
       ordinal,
       baseDate,
       placementToPointList,
