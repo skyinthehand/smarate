@@ -19,7 +19,7 @@ const jprSetting: IPrSetting = {
   expireColonaLimitation: 1633014000,
 };
 
-router.get("/check/:dateStr?", (req, res) => {
+router.get("/:dateStr?/check", (req, res) => {
   checkJpr();
 
   /**

@@ -1,4 +1,5 @@
 import axios from "axios";
+import urljoin from "url-join";
 
 wait();
 
@@ -15,7 +16,7 @@ async function wait() {
 
 async function check(): Promise<boolean> {
   const pathname = location.pathname;
-  const checkPath = pathname.replace("/jpr", "/jpr/check");
+  const checkPath = urljoin(pathname, "check");
   const res = await axios.get(checkPath);
   if (res.data) {
     location.reload();
