@@ -110,8 +110,8 @@
         <div class="accordion-item">
           <h5 class="accordion-header card-title px-1" id="headingPd<%= index %>">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePd<%= index %>" aria-expanded="false" aria-controls="collapsePd<%= index %>">
-              <span class="fw-bold"><%= ordinal(pd.placement) %>
-              &nbsp;<%= pd.name %></span>
+              <span class="fw-bold"><%= ordinal(pd.placement) %></span>
+              &nbsp;<span class="fw-bold"><%= pd.name %></span>
               &emsp;<%= Math.round(pd.point).toLocaleString() %>pt
             </button>
           </h5>
