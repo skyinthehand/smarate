@@ -105,18 +105,18 @@
         </p>
       </div>
       <h4 class="mb-3">算出日時　<%= baseDate.format("YYYY年MM月DD日") %></h4>
-      <% for (var pd of pr) { %>
+      <% pr.forEach((pd, index) => { %>
       <div class="card my-1">
         <div class="accordion-item">
-          <h5 class="accordion-header card-title px-1" id="headingPd<%= pd.placement %>">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePd<%= pd.placement %>" aria-expanded="false" aria-controls="collapsePd<%= pd.placement %>">
+          <h5 class="accordion-header card-title px-1" id="headingPd<%= index %>">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePd<%= index %>" aria-expanded="false" aria-controls="collapsePd<%= index %>">
               <div class="d-flex justify-content-between w-100 me-2 fw-bold">
                 <div><%= ordinal(pd.placement) %> <%= pd.name %></div>
                 <div><%= Math.round(pd.point).toLocaleString() %>pt</div>
               </div>
             </button>
           </h5>
-          <div id="collapsePd<%= pd.placement %>" class="accordion-collapse collapse" aria-labelledby="headingPd<%= pd.placement %>" data-bs-parent="#accordionDesc">
+          <div id="collapsePd<%= index %>" class="accordion-collapse collapse" aria-labelledby="headingPd<%= index %>" data-bs-parent="#accordionDesc">
             <div class="accordion-body">
               <ul class="list-group list-group-flush">
                 <% for (var standing of pd.standings) { %>
@@ -133,7 +133,7 @@
           </div>
         </div>
       </div>
-      <% } %>
+      <% }) %>
     </main>
   </body>
 </html>
