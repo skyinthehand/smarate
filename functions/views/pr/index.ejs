@@ -51,6 +51,26 @@
               </div>
             </div>
             <div class="accordion-item">
+              <h2 class="accordion-header" id="headingTargetTournamentList">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTargetTournamentList" aria-expanded="false" aria-controls="collapseTargetTournamentList">
+                  対象大会一覧
+                </button>
+              </h2>
+              <div id="collapseTargetTournamentList" class="accordion-collapse collapse" aria-labelledby="headingTargetTournamentList" data-bs-parent="#accordionDesc">
+                <div class="accordion-body">
+                  <ul class="list-group list-group-flush">
+                    <% for (var event of events) { %>
+                    <li class="list-group-item">
+                      <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
+                      <%= event.tournamentName %>
+                      <%= event.name %>
+                    </li>
+                    <% } %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
               <h2 class="accordion-header" id="headingPointTable">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePointTable" aria-expanded="false" aria-controls="collapsePointTable">
                   順位によるポイント表
