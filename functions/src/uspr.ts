@@ -19,7 +19,7 @@ const usprSetting: IPrSetting = {
   expireColonaLimitation: 1630422000,
 };
 
-router.get("/check/:dateStr?", (req, res) => {
+router.get("/:dateStr?/check", (req, res) => {
   checkUspr();
 
   /**
