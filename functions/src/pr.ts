@@ -18,6 +18,12 @@ export interface IPrSetting {
   minimumEntrantNum: number;
   collectionName: string;
   expireColonaLimitation?: number;
+  displaySetting: IPrDisplaySetting;
+}
+
+export interface IPrDisplaySetting {
+  countryName: string;
+  prName: string;
 }
 
 export const placementToPointList: IPlacementToPoint[] = [

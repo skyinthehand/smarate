@@ -5,7 +5,7 @@
     <main class="px-3">
       <div class="px-3 py-3 pt-md-5 pb-md-4 mx-auto text-start">
         <p class="lead">
-          これはJak式JapanPowerRanking略して<string>JJPR</string>です。
+          これはJak式<%= prSetting.displaySetting.countryName %>PowerRanking略して<string><%= prSetting.displaySetting.prName %></string>です。
           下記ルールに則って、<b>毎日</b>更新されることが特徴です。
           個人が作成したランキングですので、あくまで個人の範囲内でお楽しみください。
           <div class="accordion" id="accordionDesc">
@@ -38,13 +38,14 @@
               </h2>
               <div id="collapseTargetTournament" class="accordion-collapse collapse" aria-labelledby="headingTargetTournament" data-bs-parent="#accordionDesc">
                 <div class="accordion-body">
-                  暫定的なコロナ禍明けである2021年10月1日以降に開催された、smash.ggに登録されている61人以上の大会を対象にしています。
+                  暫定的なコロナ禍明けである<%= moment(prSetting.expireColonaLimitation, "X").tz("Asia/Tokyo").format("YYYY年MM月DD日") %>以降に開催された、
+                  smash.ggに登録されている<%= prSetting.minimumEntrantNum %>人以上の大会を対象にしています。
                   <div class="text-secondary my-2">
                     <h6>補足</h6>
                     smash.ggの設定でDiscoverableになっている必要があります。
                     Haruki氏の手法では大会シリーズで対象大会を決めていましたが、コロナ禍の影響で開催状況の足並みが揃っていないため、参加人数によって対象大会をきめています。
-                    サブファイターを試したりすることが多い平日大会の結果を反映させないために、61人以上が参加している大会を対象にしています。
-                    2022年10月1日以降は直近1年以内の大会が対象になります。
+                    サブファイターを試したりすることが多い平日大会の結果を反映させないために、<%= prSetting.minimumEntrantNum %>人以上が参加している大会を対象にしています。
+                    <%= moment(prSetting.expireColonaLimitation, "X").tz("Asia/Tokyo").format("YYYY年MM月DD日") %>以降は直近1年以内の大会が対象になります。
                   </div>
                 </div>
               </div>

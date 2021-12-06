@@ -17,6 +17,10 @@ const jprSetting: IPrSetting = {
   minimumEntrantNum: 61,
   collectionName: "jprs",
   expireColonaLimitation: 1633014000,
+  displaySetting: {
+    countryName: "Japan",
+    prName: "JJPR",
+  },
 };
 
 router.get("/:dateStr?/check", (req, res) => {
@@ -59,6 +63,8 @@ router.get("/:dateStr?", (req, res) => {
 
     res.render("pr/index", {
       pr: cachedPrData,
+      prSetting: jprSetting,
+      moment,
       ordinal,
       baseDate,
       placementToPointList,

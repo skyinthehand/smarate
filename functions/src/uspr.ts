@@ -17,6 +17,10 @@ const usprSetting: IPrSetting = {
   minimumEntrantNum: 241,
   collectionName: "usprs",
   expireColonaLimitation: 1630422000,
+  displaySetting: {
+    countryName: "UnitedStates",
+    prName: "JUSPR",
+  },
 };
 
 router.get("/:dateStr?/check", (req, res) => {
@@ -59,6 +63,8 @@ router.get("/:dateStr?", (req, res) => {
 
     res.render("pr/index", {
       pr: cachedPrData,
+      prSetting: usprSetting,
+      moment,
       ordinal,
       baseDate,
       placementToPointList,
