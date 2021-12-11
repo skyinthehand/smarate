@@ -194,19 +194,16 @@ async function createPrDataAndSave(
 }
 /**
  * 対象のevent取得
- * @param {Moment} baseDate
+ * @param {number} afterDateUnixTime
+ * @param {number} beforeDateUnixTime
  * @param {IPrSetting} prSetting
  * @return {IExpandedEvent[]}
  */
 async function getEvents(
-  baseDate: Moment,
+  afterDateUnixTime: number,
+  beforeDateUnixTime: number,
   prSetting: IPrSetting
 ): Promise<IExpandedEvent[]> {
-  const afterDateUnixTime = getAfterDateThresholdUnixTime(
-    baseDate,
-    prSetting.expireColonaLimitation
-  );
-  const beforeDateUnixTime = baseDate.unix();
   const countryCode = prSetting.countryCode;
 
   /**
@@ -452,7 +449,16 @@ async function createPrData(
   baseDate: Moment,
   prSetting: IPrSetting
 ): Promise<ISavedPrData> {
-  const events = await getEvents(baseDate, prSetting);
+  const afterDateUnixTime = getAfterDateThresholdUnixTime(
+    baseDate,
+    prSetting.expireColonaLimitation
+  );
+  const beforeDateUnixTime = baseDate.unix();
+  const events = await getEvents(
+    afterDateUnixTime,
+    beforeDateUnixTime,
+    prSetting
+  );
   const targetEvents = events.filter((event) => {
     return (
       event.state === EActivityState.COMPLETED &&
