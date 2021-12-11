@@ -290,26 +290,26 @@ async function getEvents(
   }
 
   return events;
+}
 
-  /**
-   * 算出対象イベントの開始日時
-   * @param {Moment} baseDate
-   * @param {number?} expireColonaLimitation
-   * @return {number}
-   */
-  function getAfterDateThreshold(
-    baseDate: Moment,
-    expireColonaLimitation?: number
-  ): number {
-    const oneYearBefore = baseDate.clone().subtract(1, "years");
-    const oneYearBeforeUnix = oneYearBefore.unix();
-    // コロナ禍明け前は無視する
-    // NOTE: 1年超えたら判定を消す
-    if (expireColonaLimitation && oneYearBeforeUnix < expireColonaLimitation) {
-      return expireColonaLimitation;
-    }
-    return oneYearBeforeUnix;
+/**
+ * 算出対象イベントの開始日時
+ * @param {Moment} baseDate
+ * @param {number?} expireColonaLimitation
+ * @return {number}
+ */
+function getAfterDateThreshold(
+  baseDate: Moment,
+  expireColonaLimitation?: number
+): number {
+  const oneYearBefore = baseDate.clone().subtract(1, "years");
+  const oneYearBeforeUnix = oneYearBefore.unix();
+  // コロナ禍明け前は無視する
+  // NOTE: 1年超えたら判定を消す
+  if (expireColonaLimitation && oneYearBeforeUnix < expireColonaLimitation) {
+    return expireColonaLimitation;
   }
+  return oneYearBeforeUnix;
 }
 
 /**
