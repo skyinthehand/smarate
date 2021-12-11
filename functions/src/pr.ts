@@ -202,7 +202,7 @@ async function getEvents(
   baseDate: Moment,
   prSetting: IPrSetting
 ): Promise<IExpandedEvent[]> {
-  const afterDateUnixTime = getAfterDateThreshold(
+  const afterDateUnixTime = getAfterDateThresholdUnixTime(
     baseDate,
     prSetting.expireColonaLimitation
   );
@@ -298,7 +298,7 @@ async function getEvents(
  * @param {number?} expireColonaLimitation
  * @return {number}
  */
-function getAfterDateThreshold(
+function getAfterDateThresholdUnixTime(
   baseDate: Moment,
   expireColonaLimitation?: number
 ): number {
