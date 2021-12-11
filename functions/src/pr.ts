@@ -202,11 +202,11 @@ async function getEvents(
   baseDate: Moment,
   prSetting: IPrSetting
 ): Promise<IExpandedEvent[]> {
-  const afterDate = getAfterDateThreshold(
+  const afterDateUnixTime = getAfterDateThreshold(
     baseDate,
     prSetting.expireColonaLimitation
   );
-  const beforeDate = baseDate.unix();
+  const beforeDateUnixTime = baseDate.unix();
   const countryCode = prSetting.countryCode;
 
   /**
@@ -251,8 +251,8 @@ async function getEvents(
           }
         }`,
         variables: {
-          afterDate,
-          beforeDate,
+          afterDate: afterDateUnixTime,
+          beforeDate: beforeDateUnixTime,
           countryCode,
           page,
         },
