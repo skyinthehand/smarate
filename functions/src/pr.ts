@@ -286,7 +286,13 @@ async function getEvents(
     }
   }
 
-  return events;
+  return events.filter((event) => {
+    return (
+      event.numEntrants >= prSetting.minimumEntrantNum &&
+      event.videogame.id === 1386 &&
+      !event.name.includes("Squad")
+    );
+  });
 }
 
 /**
@@ -454,18 +460,10 @@ async function createPrData(
     prSetting.expireColonaLimitation
   );
   const beforeDateUnixTime = baseDate.unix();
-  const events = await getEvents(
-    afterDateUnixTime,
-    beforeDateUnixTime,
-    prSetting
-  );
-  const targetEvents = events.filter((event) => {
-    return (
-      event.state === EActivityState.COMPLETED &&
-      event.numEntrants >= prSetting.minimumEntrantNum &&
-      event.videogame.id === 1386 &&
-      !event.name.includes("Squad")
-    );
+  const targetEvents = (
+    await getEvents(afterDateUnixTime, beforeDateUnixTime, prSetting)
+  ).filter((event) => {
+    event.state === EActivityState.COMPLETED;
   });
   const standings = (
     await Promise.all(
