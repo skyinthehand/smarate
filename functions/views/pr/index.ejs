@@ -72,6 +72,29 @@
               </div>
             </div>
             <div class="accordion-item">
+              <h2 class="accordion-header" id="headingScheduledTournamentList">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScheduledTournamentList" aria-expanded="false" aria-controls="collapseScheduledTournamentList">
+                  対象予定大会一覧
+                </button>
+              </h2>
+              <div id="collapseScheduledTournamentList" class="accordion-collapse collapse" aria-labelledby="headingScheduledTournamentList" data-bs-parent="#accordionDesc">
+                <div class="accordion-body">
+                  あくまで予定ですので、この一覧に含まれていない大会が対象になったり、含まれている大会が対象外になることもあります。
+                  また、募集人数によるフィルタができていませんので、実際には参加者数が<%= prSetting.minimumEntrantNum %>人以上になった大会が対象となります。
+                  <ul class="list-group list-group-flush">
+                    <% for (var event of scheduledEvents.reverse()) { %>
+                    <li class="list-group-item">
+                      <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
+                      <%= event.tournamentName %>
+                      <%= event.name %>
+                      現在の参加者数&nbsp;<%= event.numEntrants %>名
+                    </li>
+                    <% } %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
               <h2 class="accordion-header" id="headingPointTable">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePointTable" aria-expanded="false" aria-controls="collapsePointTable">
                   順位によるポイント表
