@@ -290,7 +290,9 @@ async function getEvents(
     return (
       event.numEntrants >= prSetting.minimumEntrantNum &&
       event.videogame.id === 1386 &&
-      !event.name.includes("Squad")
+      !event.name.includes("Squad") &&
+      !event.tournamentName.includes("ビギナーズ") &&
+      !event.tournamentName.includes("マスターズ")
     );
   });
 }
