@@ -125,6 +125,7 @@ interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
 export interface ISavedPrData {
   data: {
     events: IExpandedEvent[];
+    scheduledEvents: IExpandedEvent[];
     prData: IPlayerRankWithPlacement[];
   };
 }
@@ -469,6 +470,11 @@ async function createPrData(
       event.state === EActivityState.COMPLETED
     );
   });
+  const scheduledEvents = await getEvents(
+    baseDate.unix(),
+    baseDate.clone().add(1, "years").unix(),
+    prSetting
+  );
   const standings = (
     await Promise.all(
       targetEvents.map(async (event) => {
@@ -538,7 +544,7 @@ async function createPrData(
     });
 
   return {
-    data: { events: targetEvents, prData },
+    data: { events: targetEvents, scheduledEvents, prData },
   };
 
   /**
