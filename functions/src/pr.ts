@@ -288,7 +288,6 @@ async function getEvents(
 
   return events.filter((event) => {
     return (
-      event.numEntrants >= prSetting.minimumEntrantNum &&
       event.videogame.id === 1386 &&
       !event.name.includes("Squad") &&
       !event.tournamentName.includes("ビギナーズ") &&
@@ -465,7 +464,10 @@ async function createPrData(
   const targetEvents = (
     await getEvents(afterDateUnixTime, beforeDateUnixTime, prSetting)
   ).filter((event) => {
-    event.state === EActivityState.COMPLETED;
+    return (
+      event.numEntrants >= prSetting.minimumEntrantNum &&
+      event.state === EActivityState.COMPLETED
+    );
   });
   const standings = (
     await Promise.all(
