@@ -42,7 +42,6 @@
                   smash.ggに登録されている<%= prSetting.minimumEntrantNum %>人以上の大会を対象にしています。
                   <div class="text-secondary my-2">
                     <h6>補足</h6>
-                    smash.ggの設定でDiscoverableになっている必要があります。
                     Haruki氏の手法では大会シリーズで対象大会を決めていましたが、コロナ禍の影響で開催状況の足並みが揃っていないため、参加人数によって対象大会をきめています。
                     サブファイターを試したりすることが多い平日大会の結果を反映させないために、<%= prSetting.minimumEntrantNum %>人以上が参加している大会を対象にしています。
                     <%= moment(prSetting.expireColonaLimitation, "X").tz("Asia/Tokyo").format("YYYY年MM月DD日") %>以降は直近1年以内の大会が対象になります。
@@ -81,6 +80,11 @@
                 <div class="accordion-body">
                   あくまで予定ですので、この一覧に含まれていない大会が対象になったり、含まれている大会が対象外になることもあります。
                   また、募集人数によるフィルタができていませんので、実際には参加者数が<%= prSetting.minimumEntrantNum %>人以上になった大会が対象となります。
+                  <div class="text-secondary my-2">
+                    <h6>大会運営者の方へ</h6>
+                    開催予定のイベントがこのリストに含まれていない場合は、smash.ggの設定でDiscoverableになっているかご確認ください。
+                    <a href="https://help.smash.gg/en/articles/1465734-publishing" target="_blank" rel="noopener noreferrer">英語による設定方法の説明ページ</a>
+                  </div>
                   <ul class="list-group list-group-flush">
                     <% for (var event of scheduledEvents.reverse()) { %>
                     <li class="list-group-item">
