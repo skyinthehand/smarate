@@ -123,7 +123,8 @@ interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
 }
 
 export interface ISavedPrData {
-  data: {
+  completed: boolean;
+  data?: {
     events: IExpandedEvent[];
     scheduledEvents: IExpandedEvent[];
     prData: IPlayerRankWithPlacement[];
@@ -544,6 +545,7 @@ async function createPrData(
     });
 
   return {
+    completed: true,
     data: { events: targetEvents, scheduledEvents, prData },
   };
 
