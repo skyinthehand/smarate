@@ -123,7 +123,8 @@ interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
 }
 
 export interface ISavedPrData {
-  data: {
+  completed: boolean;
+  data?: {
     events: IExpandedEvent[];
     scheduledEvents: IExpandedEvent[];
     prData: IPlayerRankWithPlacement[];
@@ -174,6 +175,12 @@ export async function getPrDataFromCacheOrRunCreate(
     prSetting.collectionName
   );
   if (!cachedPrData) {
+    // 集計開始したことを保持するために未完了のデータを保存しておく
+    await prFirestore.setPrData(
+      baseDate,
+      { completed: false },
+      prSetting.collectionName
+    );
     createPrDataAndSave(baseDate, prSetting);
   }
   return cachedPrData;
@@ -544,6 +551,7 @@ async function createPrData(
     });
 
   return {
+    completed: true,
     data: { events: targetEvents, scheduledEvents, prData },
   };
 

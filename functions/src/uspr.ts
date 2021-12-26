@@ -56,7 +56,7 @@ router.get("/:dateStr?", (req, res) => {
       usprSetting,
       baseDate
     );
-    if (!cachedPrData) {
+    if (!cachedPrData || !cachedPrData.data) {
       res.render("pr/wait");
       return;
     }
