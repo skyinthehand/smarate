@@ -125,6 +125,7 @@ interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
 export interface ISavedPrData {
   data: {
     events: IExpandedEvent[];
+    scheduledEvents: IExpandedEvent[];
     prData: IPlayerRankWithPlacement[];
   };
 }
@@ -194,19 +195,16 @@ async function createPrDataAndSave(
 }
 /**
  * 対象のevent取得
- * @param {Moment} baseDate
+ * @param {number} afterDateUnixTime
+ * @param {number} beforeDateUnixTime
  * @param {IPrSetting} prSetting
  * @return {IExpandedEvent[]}
  */
 async function getEvents(
-  baseDate: Moment,
+  afterDateUnixTime: number,
+  beforeDateUnixTime: number,
   prSetting: IPrSetting
 ): Promise<IExpandedEvent[]> {
-  const afterDate = getAfterDateThreshold(
-    baseDate,
-    prSetting.expireColonaLimitation
-  );
-  const beforeDate = baseDate.unix();
   const countryCode = prSetting.countryCode;
 
   /**
@@ -251,8 +249,8 @@ async function getEvents(
           }
         }`,
         variables: {
-          afterDate,
-          beforeDate,
+          afterDate: afterDateUnixTime,
+          beforeDate: beforeDateUnixTime,
           countryCode,
           page,
         },
@@ -289,27 +287,34 @@ async function getEvents(
     }
   }
 
-  return events;
+  return events.filter((event) => {
+    return (
+      event.videogame.id === 1386 &&
+      !event.name.includes("Squad") &&
+      !event.tournamentName.includes("ビギナーズ") &&
+      !event.tournamentName.includes("マスターズ")
+    );
+  });
+}
 
-  /**
-   * 算出対象イベントの開始日時
-   * @param {Moment} baseDate
-   * @param {number?} expireColonaLimitation
-   * @return {number}
-   */
-  function getAfterDateThreshold(
-    baseDate: Moment,
-    expireColonaLimitation?: number
-  ): number {
-    const oneYearBefore = baseDate.clone().subtract(1, "years");
-    const oneYearBeforeUnix = oneYearBefore.unix();
-    // コロナ禍明け前は無視する
-    // NOTE: 1年超えたら判定を消す
-    if (expireColonaLimitation && oneYearBeforeUnix < expireColonaLimitation) {
-      return expireColonaLimitation;
-    }
-    return oneYearBeforeUnix;
+/**
+ * 算出対象イベントの開始日時
+ * @param {Moment} baseDate
+ * @param {number?} expireColonaLimitation
+ * @return {number}
+ */
+function getAfterDateThresholdUnixTime(
+  baseDate: Moment,
+  expireColonaLimitation?: number
+): number {
+  const oneYearBefore = baseDate.clone().subtract(1, "years");
+  const oneYearBeforeUnix = oneYearBefore.unix();
+  // コロナ禍明け前は無視する
+  // NOTE: 1年超えたら判定を消す
+  if (expireColonaLimitation && oneYearBeforeUnix < expireColonaLimitation) {
+    return expireColonaLimitation;
   }
+  return oneYearBeforeUnix;
 }
 
 /**
@@ -452,15 +457,24 @@ async function createPrData(
   baseDate: Moment,
   prSetting: IPrSetting
 ): Promise<ISavedPrData> {
-  const events = await getEvents(baseDate, prSetting);
-  const targetEvents = events.filter((event) => {
+  const afterDateUnixTime = getAfterDateThresholdUnixTime(
+    baseDate,
+    prSetting.expireColonaLimitation
+  );
+  const beforeDateUnixTime = baseDate.unix();
+  const targetEvents = (
+    await getEvents(afterDateUnixTime, beforeDateUnixTime, prSetting)
+  ).filter((event) => {
     return (
-      event.state === EActivityState.COMPLETED &&
       event.numEntrants >= prSetting.minimumEntrantNum &&
-      event.videogame.id === 1386 &&
-      !event.name.includes("Squad")
+      event.state === EActivityState.COMPLETED
     );
   });
+  const scheduledEvents = await getEvents(
+    baseDate.unix(),
+    baseDate.clone().add(1, "years").unix(),
+    prSetting
+  );
   const standings = (
     await Promise.all(
       targetEvents.map(async (event) => {
@@ -530,7 +544,7 @@ async function createPrData(
     });
 
   return {
-    data: { events: targetEvents, prData },
+    data: { events: targetEvents, scheduledEvents, prData },
   };
 
   /**
