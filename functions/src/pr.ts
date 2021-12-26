@@ -175,6 +175,12 @@ export async function getPrDataFromCacheOrRunCreate(
     prSetting.collectionName
   );
   if (!cachedPrData) {
+    // 集計開始したことを保持するために未完了のデータを保存しておく
+    await prFirestore.setPrData(
+      baseDate,
+      { completed: false },
+      prSetting.collectionName
+    );
     createPrDataAndSave(baseDate, prSetting);
   }
   return cachedPrData;
