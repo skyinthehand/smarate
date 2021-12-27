@@ -145,7 +145,7 @@ export async function checkPrData(
     baseDate,
     prSetting.collectionName
   );
-  return !!cachedPrData;
+  return !!cachedPrData && cachedPrData.completed;
 }
 
 /**
