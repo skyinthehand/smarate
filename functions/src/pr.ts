@@ -24,6 +24,8 @@ export interface IPrSetting {
 interface IPrDisplaySetting {
   countryName: string;
   prName: string;
+  // 参考記録かどうか
+  isRef: boolean;
 }
 
 export const placementToPointList: IPlacementToPoint[] = [

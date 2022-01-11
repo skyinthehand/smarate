@@ -20,6 +20,7 @@ const jprSetting: IPrSetting = {
   displaySetting: {
     countryName: "Japan",
     prName: "JJPR",
+    isRef: true,
   },
 };
 
