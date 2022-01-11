@@ -20,6 +20,7 @@ const usprSetting: IPrSetting = {
   displaySetting: {
     countryName: "UnitedStates",
     prName: "JUSPR",
+    isRef: false,
   },
 };
 
