@@ -4,7 +4,11 @@
   <body>
     <nav class="navbar navbar-light bg-light sticky-top">
       <div class="container-fluid">
-        <span class="navbar-text h2"><%= prSetting.displaySetting.prName %></span>
+        <span class="navbar-text h2"><%= prSetting.displaySetting.prName %>
+          <% if (prSetting.displaySetting.isRef) { %>
+            （参考記録）
+          <% } %>
+        </span>
         <span class="navbar-text">制作 @jak_ssbu</span>
       </div>
     </nav>
@@ -13,6 +17,9 @@
         <p class="lead">
           これはJak式<%= prSetting.displaySetting.countryName %>PowerRanking略して<string><%= prSetting.displaySetting.prName %></string>です。
           下記ルールに則って、<b>毎日</b>更新されることが特徴です。
+          <% if (prSetting.displaySetting.isRef) { %>
+          ただし、コロナ禍の状況を踏まえて、現在は参考記録扱いとしています。
+          <% } %>
           個人が作成したランキングですので、あくまで個人の範囲内でお楽しみください。
           <div class="accordion" id="accordionDesc">
             <div class="accordion-item">
