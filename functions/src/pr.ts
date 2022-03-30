@@ -86,9 +86,7 @@ interface IEvent {
   videogame: {
     id: number;
   };
-  standings?: {
-    nodes: IStanding[];
-  };
+  standings?: IConvertedStanding[];
 }
 
 interface IExpandedEvent extends IEvent {
@@ -477,13 +475,17 @@ async function createPrData(
     baseDate.clone().add(1, "years").unix(),
     prSetting
   );
-  const standings = (
-    await Promise.all(
-      targetEvents.map(async (event) => {
-        return await getEventStandings(event.id, baseDate);
-      })
-    )
-  ).flat();
+  const eventStandingDict: Array<Required<IExpandedEvent>> = await Promise.all(
+    targetEvents.map(async (event): Promise<Required<IExpandedEvent>> => {
+      event.standings = await getEventStandings(event.id, baseDate);
+      return event as Required<IExpandedEvent>;
+    })
+  );
+  const standings = eventStandingDict
+    .map((eventStanding) => {
+      return eventStanding.standings;
+    })
+    .flat();
 
   let prevPlacement = 0;
   let prevPoint = 0;
