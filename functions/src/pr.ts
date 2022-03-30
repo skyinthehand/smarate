@@ -83,12 +83,11 @@ interface IEvent {
   name: string;
   numEntrants: number;
   state: EActivityState;
+  type: number;
   videogame: {
     id: number;
   };
-  standings?: {
-    nodes: IStanding[];
-  };
+  standings?: IConvertedStanding[];
 }
 
 interface IExpandedEvent extends IEvent {
@@ -122,6 +121,20 @@ interface IPlayerRank {
 
 interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
   placement: number;
+}
+
+/**
+ * 順位データが見つからなかった時（なぜかsmashgg側でunknownエラーになる時）のエラー
+ */
+class StandingDataNotFoundError extends Error {
+  /**
+   * コンストラクタ
+   * @param {string} message
+   */
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
 }
 
 export interface ISavedPrData {
@@ -243,6 +256,7 @@ async function getEvents(
                 name
                 numEntrants
                 state
+                type
                 videogame {
                   id
                 }
@@ -294,7 +308,8 @@ async function getEvents(
       event.videogame.id === 1386 &&
       !event.name.includes("Squad") &&
       !event.tournamentName.includes("ビギナーズ") &&
-      !event.tournamentName.includes("マスターズ")
+      !event.tournamentName.includes("マスターズ") &&
+      event.type === 1
     );
   });
 }
@@ -376,6 +391,11 @@ async function getEventStandings(
       },
     }
   );
+  if (!standingsRes.data.data) {
+    return Promise.reject(
+      new StandingDataNotFoundError("data not found error")
+    );
+  }
   const tournamentName = standingsRes.data.data.event.tournament.name;
   const endAt = standingsRes.data.data.event.tournament.endAt;
   const eventName = standingsRes.data.data.event.name;
@@ -477,13 +497,23 @@ async function createPrData(
     baseDate.clone().add(1, "years").unix(),
     prSetting
   );
-  const standings = (
-    await Promise.all(
-      targetEvents.map(async (event) => {
-        return await getEventStandings(event.id, baseDate);
-      })
-    )
-  ).flat();
+  const eventStandingDict: Array<Required<IExpandedEvent>> = await Promise.all(
+    targetEvents.map(async (event): Promise<Required<IExpandedEvent>> => {
+      try {
+        event.standings = await getEventStandings(event.id, baseDate);
+      } catch (e) {
+        if (e instanceof StandingDataNotFoundError) {
+          event.standings = [];
+        }
+      }
+      return event as Required<IExpandedEvent>;
+    })
+  );
+  const standings = eventStandingDict
+    .map((eventStanding) => {
+      return eventStanding.standings;
+    })
+    .flat();
 
   let prevPlacement = 0;
   let prevPoint = 0;
@@ -546,7 +576,7 @@ async function createPrData(
     });
 
   return {
-    data: { events: targetEvents, scheduledEvents, prData },
+    data: { events: eventStandingDict, scheduledEvents, prData },
   };
 
   /**

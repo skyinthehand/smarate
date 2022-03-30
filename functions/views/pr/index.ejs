@@ -77,6 +77,9 @@
                       <%= event.tournamentName %>
                       <%= event.name %>
                       &emsp;参加者数&nbsp;<%= event.numEntrants %>名
+                      <% if (!event.standings || event.standings.length < 1) { %>
+                        &nbsp;<span class="fw-bold text-primary">データ取得エラー</span>
+                      <% } %>
                     </li>
                     <% } %>
                   </ul>
