@@ -83,6 +83,7 @@ interface IEvent {
   name: string;
   numEntrants: number;
   state: EActivityState;
+  type: number;
   videogame: {
     id: number;
   };
@@ -255,6 +256,7 @@ async function getEvents(
                 name
                 numEntrants
                 state
+                type
                 videogame {
                   id
                 }
@@ -306,7 +308,8 @@ async function getEvents(
       event.videogame.id === 1386 &&
       !event.name.includes("Squad") &&
       !event.tournamentName.includes("ビギナーズ") &&
-      !event.tournamentName.includes("マスターズ")
+      !event.tournamentName.includes("マスターズ") &&
+      event.type === 1
     );
   });
 }
