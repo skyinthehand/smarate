@@ -122,6 +122,20 @@ interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
   placement: number;
 }
 
+/**
+ * 順位データが見つからなかった時（なぜかsmashgg側でunknownエラーになる時）のエラー
+ */
+class StandingDataNotFoundError extends Error {
+  /**
+   * コンストラクタ
+   * @param {string} message
+   */
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
 export interface ISavedPrData {
   data: {
     events: IExpandedEvent[];
@@ -374,6 +388,11 @@ async function getEventStandings(
       },
     }
   );
+  if (!standingsRes.data.data) {
+    return Promise.reject(
+      new StandingDataNotFoundError("data not found error")
+    );
+  }
   const tournamentName = standingsRes.data.data.event.tournament.name;
   const endAt = standingsRes.data.data.event.tournament.endAt;
   const eventName = standingsRes.data.data.event.name;
@@ -477,7 +496,13 @@ async function createPrData(
   );
   const eventStandingDict: Array<Required<IExpandedEvent>> = await Promise.all(
     targetEvents.map(async (event): Promise<Required<IExpandedEvent>> => {
-      event.standings = await getEventStandings(event.id, baseDate);
+      try {
+        event.standings = await getEventStandings(event.id, baseDate);
+      } catch (e) {
+        if (e instanceof StandingDataNotFoundError) {
+          event.standings = [];
+        }
+      }
       return event as Required<IExpandedEvent>;
     })
   );
@@ -548,7 +573,7 @@ async function createPrData(
     });
 
   return {
-    data: { events: targetEvents, scheduledEvents, prData },
+    data: { events: eventStandingDict, scheduledEvents, prData },
   };
 
   /**
