@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 
-import { ISavedPrData } from "./pr";
+import { ISavedErrorData, ISavedPrData, isSavedErrorData } from "./pr";
 import { Moment } from "moment";
 
 /**
@@ -12,32 +12,35 @@ import { Moment } from "moment";
 export async function getPrData(
   date: Moment,
   collectionName: string
-): Promise<ISavedPrData | null> {
+): Promise<ISavedPrData | ISavedErrorData | null> {
   const db = admin.firestore();
   const prsRef = db.collection(collectionName);
   const prDataDoc = await prsRef.doc(date.unix().toString()).get();
   if (!prDataDoc.exists) {
     return null;
   }
-  const savedPrData = prDataDoc.data() as ISavedPrData;
-  return savedPrData;
+  const savedData = prDataDoc.data() as ISavedPrData | ISavedErrorData;
+  if (isSavedErrorData(savedData)) {
+    return savedData as ISavedErrorData;
+  }
+  return savedData as ISavedPrData;
 }
 
 /**
  * Create pr data
  * @param {Moment} date
- * @param {ISavedPrData} savedPrData
+ * @param {ISavedPrData | ISavedErrorData} savedData
  * @param {string} collectionName
  * @return {Promise<string | null>}
  */
 export async function setPrData(
   date: Moment,
-  savedPrData: ISavedPrData,
+  savedData: ISavedPrData | ISavedErrorData,
   collectionName: string
 ): Promise<void> {
   const db = admin.firestore();
   const prsRef = db.collection(collectionName);
   const prDataDoc = prsRef.doc(date.unix().toString());
-  await prDataDoc.set(savedPrData);
+  await prDataDoc.set(savedData);
   return;
 }

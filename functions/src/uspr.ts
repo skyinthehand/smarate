@@ -7,6 +7,7 @@ import {
   checkPrData,
   getPrDataFromCacheOrRunCreate,
   placementToPointList,
+  isSavedErrorData,
 } from "./pr";
 
 // eslint-disable-next-line new-cap
@@ -59,6 +60,11 @@ router.get("/:dateStr?", (req, res) => {
     );
     if (!cachedPrData) {
       res.render("pr/wait");
+      return;
+    }
+
+    if (isSavedErrorData(cachedPrData)) {
+      res.render("pr/error");
       return;
     }
 

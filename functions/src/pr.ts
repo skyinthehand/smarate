@@ -145,6 +145,27 @@ export interface ISavedPrData {
   };
 }
 
+export interface ISavedErrorData {
+  data: {
+    error: string;
+  };
+}
+
+/**
+ * 保存データがエラーデータかどうかを判定
+ * @param {ISavedPrData | ISavedErrorData} savedData
+ * @return {boolean}
+ */
+export function isSavedErrorData(
+  savedData: ISavedPrData | ISavedErrorData
+): savedData is ISavedErrorData {
+  return (
+    savedData !== null &&
+    typeof savedData === "object" &&
+    "error" in savedData.data
+  );
+}
+
 /**
  * prSettingに対応したprDataを作成済みかどうか判定して返す
  * @param {IPrSetting} prSetting
@@ -183,7 +204,7 @@ export function getBaseDate(dateStr?: string): Moment {
 export async function getPrDataFromCacheOrRunCreate(
   prSetting: IPrSetting,
   baseDate: Moment
-): Promise<ISavedPrData | null> {
+): Promise<ISavedPrData | ISavedErrorData | null> {
   const cachedPrData = await prFirestore.getPrData(
     baseDate,
     prSetting.collectionName
@@ -198,15 +219,30 @@ export async function getPrDataFromCacheOrRunCreate(
  * prDataを作成してキャッシュに保存
  * @param {Moment} baseDate
  * @param {IPrSetting} prSetting
- * @return {Promise<IPrData>}
+ * @return {Promise<IPrData | ISavedErrorData>}
  */
 async function createPrDataAndSave(
   baseDate: Moment,
   prSetting: IPrSetting
-): Promise<ISavedPrData> {
-  const prData = await createPrData(baseDate, prSetting);
-  await prFirestore.setPrData(baseDate, prData, prSetting.collectionName);
-  return prData;
+): Promise<ISavedPrData | ISavedErrorData> {
+  try {
+    const prData = await createPrData(baseDate, prSetting);
+    await prFirestore.setPrData(baseDate, prData, prSetting.collectionName);
+    return prData;
+  } catch (e) {
+    if (e instanceof Error) {
+      const errorData: ISavedErrorData = {
+        data: { error: JSON.stringify(e, Object.getOwnPropertyNames(e)) },
+      };
+      await prFirestore.setPrData(
+        baseDate,
+        errorData,
+        prSetting.collectionName
+      );
+      return errorData;
+    }
+    throw e;
+  }
 }
 /**
  * 対象のevent取得
