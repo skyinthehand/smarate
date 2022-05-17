@@ -441,7 +441,7 @@ async function getEventStandings(
     .filter((standing: IStanding) => {
       return standing.entrant.participants[0].player.user;
     })
-    .map((standing: IStanding) => {
+    .map((standing: IStanding): IConvertedStanding => {
       const point = placementToGradientPoint(
         standing.placement,
         placementToPointList,
