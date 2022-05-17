@@ -87,7 +87,7 @@ interface IEvent {
   videogame: {
     id: number;
   };
-  standings?: IConvertedStanding[];
+  standings?: IStandingWithEventInfo[];
 }
 
 interface IExpandedEvent extends IEvent {
@@ -102,11 +102,15 @@ interface ITournament {
   events?: IEvent[];
 }
 
-interface IConvertedStanding {
+interface IStandingWithPoint {
   id: string;
   name: string;
   point: number;
   placement: number;
+  eventId: string;
+}
+
+interface IStandingWithEventInfo extends IStandingWithPoint {
   tournamentName: string;
   eventName: string;
   endAt: number;
@@ -116,7 +120,7 @@ interface IPlayerRank {
   id: string;
   name: string;
   point?: number;
-  standings: IConvertedStanding[];
+  standings: IStandingWithEventInfo[];
 }
 
 interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
@@ -374,12 +378,12 @@ function getAfterDateThresholdUnixTime(
  * 対象のevent結果取得
  * @param {string} eventId
  * @param {Moment} baseDate
- * @return {IConvertedStanding[]}
+ * @return {IStandingWithEventInfo[]}
  */
 async function getEventStandings(
   eventId: string,
   baseDate: Moment
-): Promise<IConvertedStanding[]> {
+): Promise<IStandingWithEventInfo[]> {
   const standingsRes = await axios.post(
     "https://api.smash.gg/gql/alpha",
     {
@@ -441,7 +445,7 @@ async function getEventStandings(
     .filter((standing: IStanding) => {
       return standing.entrant.participants[0].player.user;
     })
-    .map((standing: IStanding): IConvertedStanding => {
+    .map((standing: IStanding): IStandingWithEventInfo => {
       const point = placementToGradientPoint(
         standing.placement,
         placementToPointList,
@@ -454,6 +458,7 @@ async function getEventStandings(
         point,
         placement: standing.placement,
         tournamentName: tournamentName,
+        eventId,
         eventName: eventName,
         endAt,
       };
@@ -557,7 +562,7 @@ async function createPrData(
     .reduce(
       (
         playerRankList: IPlayerRank[],
-        convertedStanding: IConvertedStanding
+        convertedStanding: IStandingWithEventInfo
       ): IPlayerRank[] => {
         const playerRank = playerRankList.find((pr) => {
           return pr.id === convertedStanding.id;
@@ -583,7 +588,7 @@ async function createPrData(
         });
       }
       const topStandings = playerRank.standings
-        .sort((a: IConvertedStanding, b: IConvertedStanding) => {
+        .sort((a: IStandingWithEventInfo, b: IStandingWithEventInfo) => {
           return -(a.point - b.point);
         })
         .slice(0, topTournamentsNum);
@@ -617,10 +622,10 @@ async function createPrData(
 
   /**
    * 順位ポイントの合計を返す
-   * @param {IConvertedStanding[]} standings
+   * @param {IStandingWithEventInfo[]} standings
    * @return {number}
    */
-  function summerizePlayerPoint(standings: IConvertedStanding[]): number {
+  function summerizePlayerPoint(standings: IStandingWithEventInfo[]): number {
     return standings.reduce((sumPoint, standing) => {
       return sumPoint + standing.point;
     }, 0);
