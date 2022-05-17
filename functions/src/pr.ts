@@ -87,12 +87,15 @@ interface IEvent {
   videogame: {
     id: number;
   };
-  standings?: IStandingWithEventInfo[];
 }
 
 interface IExpandedEvent extends IEvent {
   tournamentName: string;
   endAt: number;
+}
+
+interface IEventWithStandings extends IExpandedEvent {
+  standings: IStandingWithEventInfo[];
 }
 
 interface ITournament {
@@ -143,7 +146,7 @@ class StandingDataNotFoundError extends Error {
 
 export interface ISavedPrData {
   data: {
-    events: IExpandedEvent[];
+    events: IEventWithStandings[];
     scheduledEvents: IExpandedEvent[];
     prData: IPlayerRankWithPlacement[];
   };
@@ -538,16 +541,30 @@ async function createPrData(
     baseDate.clone().add(1, "years").unix(),
     prSetting
   );
-  const eventStandingDict: Array<Required<IExpandedEvent>> = await Promise.all(
-    targetEvents.map(async (event): Promise<Required<IExpandedEvent>> => {
-      try {
-        event.standings = await getEventStandings(event.id, baseDate);
-      } catch (e) {
-        if (e instanceof StandingDataNotFoundError) {
-          event.standings = [];
-        }
+  // TODO: 雑な関数定義なので削除
+  const getEventStandingsWithErrorHandling = async (
+    eventId: string,
+    baseDate: Moment
+  ): Promise<IStandingWithEventInfo[]> => {
+    try {
+      return await getEventStandings(eventId, baseDate);
+    } catch (e) {
+      if (e instanceof StandingDataNotFoundError) {
+        return [];
       }
-      return event as Required<IExpandedEvent>;
+      throw e;
+    }
+  };
+  const eventStandingDict: Array<IEventWithStandings> = await Promise.all(
+    targetEvents.map(async (event): Promise<IEventWithStandings> => {
+      const standings = await getEventStandingsWithErrorHandling(
+        event.id,
+        baseDate
+      );
+      return {
+        ...event,
+        standings,
+      };
     })
   );
   const standings = eventStandingDict
