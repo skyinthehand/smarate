@@ -217,7 +217,7 @@ export async function getPrDataFromCacheOrRunCreate(
     prSetting.collectionName
   );
   if (!cachedPrData) {
-    createPrDataAndSave(baseDate, prSetting);
+    return await createPrDataAndSave(baseDate, prSetting);
   }
   return cachedPrData;
 }
