@@ -514,6 +514,30 @@ async function getEventStandings(
 }
 
 /**
+ * @param {Moment} baseDate
+ * @param {IPrSetting} prSetting
+ * @return {IExpandedEvent[]}
+ */
+async function getEventsFromSetting(
+  baseDate: Moment,
+  prSetting: IPrSetting
+): Promise<IExpandedEvent[]> {
+  const afterDateUnixTime = getAfterDateThresholdUnixTime(
+    baseDate,
+    prSetting.expireColonaLimitation
+  );
+  const beforeDateUnixTime = baseDate.unix();
+  return (
+    await getEvents(afterDateUnixTime, beforeDateUnixTime, prSetting)
+  ).filter((event) => {
+    return (
+      event.numEntrants >= prSetting.minimumEntrantNum &&
+      event.state === EActivityState.COMPLETED
+    );
+  });
+}
+
+/**
  * smashgg叩くところ
  * @param {Moment} baseDate
  * @param {IPrSetting} prSetting
@@ -523,19 +547,7 @@ async function createPrData(
   baseDate: Moment,
   prSetting: IPrSetting
 ): Promise<ISavedPrData> {
-  const afterDateUnixTime = getAfterDateThresholdUnixTime(
-    baseDate,
-    prSetting.expireColonaLimitation
-  );
-  const beforeDateUnixTime = baseDate.unix();
-  const targetEvents = (
-    await getEvents(afterDateUnixTime, beforeDateUnixTime, prSetting)
-  ).filter((event) => {
-    return (
-      event.numEntrants >= prSetting.minimumEntrantNum &&
-      event.state === EActivityState.COMPLETED
-    );
-  });
+  const targetEvents = await getEventsFromSetting(baseDate, prSetting);
   const scheduledEvents = await getEvents(
     baseDate.unix(),
     baseDate.clone().add(1, "years").unix(),
