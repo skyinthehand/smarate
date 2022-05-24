@@ -94,10 +94,6 @@ interface IExpandedEvent extends IEvent {
   endAt: number;
 }
 
-interface IEventWithStandings extends IExpandedEvent {
-  standings: IStandingWithEventInfo[];
-}
-
 interface ITournament {
   id: string;
   name: string;
@@ -113,17 +109,11 @@ interface IStandingWithPoint {
   eventId: string;
 }
 
-interface IStandingWithEventInfo extends IStandingWithPoint {
-  tournamentName: string;
-  eventName: string;
-  endAt: number;
-}
-
 interface IPlayerRank {
   id: string;
   name: string;
   point?: number;
-  standings: IStandingWithEventInfo[];
+  standings: IStandingWithPoint[];
 }
 
 interface IPlayerRankWithPlacement extends Required<IPlayerRank> {
@@ -146,7 +136,8 @@ class StandingDataNotFoundError extends Error {
 
 export interface ISavedPrData {
   data: {
-    events: IEventWithStandings[];
+    events: IExpandedEvent[];
+    standings: IStandingWithPoint[];
     scheduledEvents: IExpandedEvent[];
     prData: IPlayerRankWithPlacement[];
   };
@@ -381,12 +372,12 @@ function getAfterDateThresholdUnixTime(
  * 対象のevent結果取得
  * @param {string} eventId
  * @param {Moment} baseDate
- * @return {IStandingWithEventInfo[]}
+ * @return {IStandingWithPoint[]}
  */
 async function getEventStandings(
   eventId: string,
   baseDate: Moment
-): Promise<IStandingWithEventInfo[]> {
+): Promise<IStandingWithPoint[]> {
   const standingsRes = await axios.post(
     "https://api.smash.gg/gql/alpha",
     {
@@ -439,16 +430,14 @@ async function getEventStandings(
       new StandingDataNotFoundError("data not found error")
     );
   }
-  const tournamentName = standingsRes.data.data.event.tournament.name;
   const endAt = standingsRes.data.data.event.tournament.endAt;
-  const eventName = standingsRes.data.data.event.name;
   const numEntrants = standingsRes.data.data.event.numEntrants;
   const standings = standingsRes.data.data.event.standings.nodes;
   return standings
     .filter((standing: IStanding) => {
       return standing.entrant.participants[0].player.user;
     })
-    .map((standing: IStanding): IStandingWithEventInfo => {
+    .map((standing: IStanding): IStandingWithPoint => {
       const point = placementToGradientPoint(
         standing.placement,
         placementToPointList,
@@ -460,10 +449,7 @@ async function getEventStandings(
         name: standing.entrant.name,
         point,
         placement: standing.placement,
-        tournamentName: tournamentName,
         eventId,
-        eventName: eventName,
-        endAt,
       };
     });
 
@@ -557,7 +543,7 @@ async function createPrData(
   const getEventStandingsWithErrorHandling = async (
     eventId: string,
     baseDate: Moment
-  ): Promise<IStandingWithEventInfo[]> => {
+  ): Promise<IStandingWithPoint[]> => {
     try {
       return await getEventStandings(eventId, baseDate);
     } catch (e) {
@@ -567,23 +553,13 @@ async function createPrData(
       throw e;
     }
   };
-  const eventStandingDict: Array<IEventWithStandings> = await Promise.all(
-    targetEvents.map(async (event): Promise<IEventWithStandings> => {
-      const standings = await getEventStandingsWithErrorHandling(
-        event.id,
-        baseDate
-      );
-      return {
-        ...event,
-        standings,
-      };
-    })
-  );
-  const standings = eventStandingDict
-    .map((eventStanding) => {
-      return eventStanding.standings;
-    })
-    .flat();
+  const standings: IStandingWithPoint[] = (
+    await Promise.all(
+      targetEvents.map(async (event): Promise<IStandingWithPoint[]> => {
+        return await getEventStandingsWithErrorHandling(event.id, baseDate);
+      })
+    )
+  ).flat();
 
   let prevPlacement = 0;
   let prevPoint = 0;
@@ -591,7 +567,7 @@ async function createPrData(
     .reduce(
       (
         playerRankList: IPlayerRank[],
-        convertedStanding: IStandingWithEventInfo
+        convertedStanding: IStandingWithPoint
       ): IPlayerRank[] => {
         const playerRank = playerRankList.find((pr) => {
           return pr.id === convertedStanding.id;
@@ -617,7 +593,7 @@ async function createPrData(
         });
       }
       const topStandings = playerRank.standings
-        .sort((a: IStandingWithEventInfo, b: IStandingWithEventInfo) => {
+        .sort((a: IStandingWithPoint, b: IStandingWithPoint) => {
           return -(a.point - b.point);
         })
         .slice(0, topTournamentsNum);
@@ -646,15 +622,15 @@ async function createPrData(
     });
 
   return {
-    data: { events: eventStandingDict, scheduledEvents, prData },
+    data: { standings, events: targetEvents, scheduledEvents, prData },
   };
 
   /**
    * 順位ポイントの合計を返す
-   * @param {IStandingWithEventInfo[]} standings
+   * @param {IStandingWithPoint[]} standings
    * @return {number}
    */
-  function summerizePlayerPoint(standings: IStandingWithEventInfo[]): number {
+  function summerizePlayerPoint(standings: IStandingWithPoint[]): number {
     return standings.reduce((sumPoint, standing) => {
       return sumPoint + standing.point;
     }, 0);
