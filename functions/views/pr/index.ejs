@@ -80,8 +80,8 @@
                     <li class="list-group-item">
                       <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
                       &emsp;参加者数&nbsp;<span class="fw-bolder"><%= event.numEntrants %>名</span>
-                      <%= event.tournamentName %>
-                      <%= event.name %>
+                      &emsp;<%= event.tournamentName %>
+                      &nbsp;<%= event.name %>
                     </li>
                     <% } %>
                   </ul>
@@ -109,8 +109,8 @@
                     <li class="list-group-item">
                       <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
                       &emsp;現在の参加者数&nbsp;<span class="fw-bolder"><%= event.numEntrants %>名</span>
-                      <%= event.tournamentName %>
-                      <%= event.name %>
+                      &emsp;<%= event.tournamentName %>
+                      &nbsp;<%= event.name %>
                     </li>
                     <% } %>
                   </ul>
@@ -169,10 +169,10 @@
                 <% for (var standing of pd.standings) { %>
                   <% event = events.find((event) => event.id === standing.eventId) %>
                 <li class="list-group-item">
-                  <span class="fw-bolder"><%= ordinal(standing.placement) %></span>
-                  &emsp;<%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
-                  &nbsp;<span class="fw-bolder"><%= event.tournamentName %></span>
-                  &nbsp;<%= event.eventName %>
+                  <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
+                  &emsp;<span class="fw-bolder"><%= ordinal(standing.placement) %></span> / <%= event.numEntrants %>
+                  &emsp;<%= event.tournamentName %>
+                  &nbsp;<%= event.name %>
                   &emsp;<%= Math.round(standing.point).toLocaleString() %>pt
                 </li>
                 <% } %>
