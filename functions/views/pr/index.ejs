@@ -79,9 +79,9 @@
                     <% for (var event of events) { %>
                     <li class="list-group-item">
                       <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
+                      &emsp;参加者数&nbsp;<span class="fw-bolder"><%= event.numEntrants %>名</span>
                       <%= event.tournamentName %>
                       <%= event.name %>
-                      &emsp;参加者数&nbsp;<%= event.numEntrants %>名
                     </li>
                     <% } %>
                   </ul>
@@ -108,9 +108,9 @@
                     <% for (var event of scheduledEvents.reverse()) { %>
                     <li class="list-group-item">
                       <%= moment(event.endAt, "X").tz("Asia/Tokyo").format("YYYY/MM/DD") %>
+                      &emsp;現在の参加者数&nbsp;<span class="fw-bolder"><%= event.numEntrants %>名</span>
                       <%= event.tournamentName %>
                       <%= event.name %>
-                      &emsp;現在の参加者数&nbsp;<%= event.numEntrants %>名
                     </li>
                     <% } %>
                   </ul>
