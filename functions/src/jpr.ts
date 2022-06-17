@@ -68,7 +68,7 @@ router.get("/:dateStr?", (req, res) => {
       return;
     }
 
-    res.render("pr/index", {
+    res.set("Cache-Control", "public, max-age=21600").render("pr/index", {
       pr: cachedPrData.data.prData,
       events: cachedPrData.data.events,
       scheduledEvents: cachedPrData.data.scheduledEvents,
