@@ -1,12 +1,8 @@
-import * as functions from "firebase-functions";
-import axios from "axios";
 import * as moment from "moment-timezone";
 import { Moment } from "moment";
 
 import * as prFirestore from "./firestore_pr";
-
-const config = functions.config();
-const smashggAuthToken = config.smashgg.authtoken as string;
+import { requestSmashgg } from "./util/smashgg";
 
 interface IPlacementToPoint {
   placement: number;
@@ -259,10 +255,7 @@ async function getEvents(
    * @return {Promise<IExpandedEvent[]>}
    */
   async function getEventsInPage(page: number): Promise<IExpandedEvent[]> {
-    const eventRes = await axios.post(
-      "https://api.smash.gg/gql/alpha",
-      {
-        query: `query TournamentsByCountry
+    const query = `query TournamentsByCountry
         ($afterDate: Timestamp!, $beforeDate: Timestamp!,
           $countryCode: String!, $page: Int!) {
           tournaments(query: {
@@ -293,22 +286,15 @@ async function getEvents(
               }
             }
           }
-        }`,
-        variables: {
-          afterDate: afterDateUnixTime,
-          beforeDate: beforeDateUnixTime,
-          countryCode,
-          page,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${smashggAuthToken}`,
-        },
-      }
-    );
-    const tournaments: Required<ITournament>[] =
-      eventRes.data.data.tournaments.nodes;
+        }`;
+    const variables = {
+      afterDate: afterDateUnixTime,
+      beforeDate: beforeDateUnixTime,
+      countryCode,
+      page,
+    };
+    const eventRes = await requestSmashgg(query, variables);
+    const tournaments: Required<ITournament>[] = eventRes.tournaments.nodes;
     return tournaments
       .map((tournament) => {
         return tournament.events.map((event) => {
@@ -373,10 +359,7 @@ async function getEventStandings(
   eventId: string,
   baseDate: Moment
 ): Promise<IStandingWithPoint[]> {
-  const standingsRes = await axios.post(
-    "https://api.smash.gg/gql/alpha",
-    {
-      query: `query EventStandings($eventId: ID!) {
+  const query = `query EventStandings($eventId: ID!) {
         event(id: $eventId) {
           id
           name
@@ -409,25 +392,20 @@ async function getEventStandings(
             }
           }
         }
-      }`,
-      variables: {
-        eventId,
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${smashggAuthToken}`,
-      },
-    }
-  );
-  if (!standingsRes.data.data) {
+      }`;
+  const variables = {
+    eventId,
+  };
+  const standingsRes = await requestSmashgg(query, variables);
+  if (!standingsRes) {
     return Promise.reject(
       new StandingDataNotFoundError("data not found error")
     );
   }
-  const endAt = standingsRes.data.data.event.tournament.endAt;
-  const numEntrants = standingsRes.data.data.event.numEntrants;
-  const standings = standingsRes.data.data.event.standings.nodes;
+  const event = standingsRes.event;
+  const endAt = event.tournament.endAt;
+  const numEntrants = event.numEntrants;
+  const standings = event.standings.nodes;
   return standings
     .filter((standing: IStanding) => {
       return standing.entrant.participants[0].player.user;
