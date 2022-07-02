@@ -235,6 +235,7 @@ async function createPrDataAndSave(
     throw e;
   }
 }
+
 /**
  * 対象のevent取得
  * @param {number} afterDateUnixTime
@@ -309,6 +310,50 @@ async function getEvents(
       .flat();
   }
 
+  /**
+   * slugに該当するevent取得
+   * 期間外の場合は空配列
+   * @param {string} slug
+   * @return {Promise<IExpandedEvent[]>}
+   */
+  async function getEventsFromSlug(slug: string): Promise<IExpandedEvent[]> {
+    const query = `query GetEvent($slug: String!) {
+      tournament(slug: $slug) {
+        id
+        name
+        endAt
+        events (filter: {
+          videogameId: 1386
+        }) {
+          id
+          name
+          numEntrants
+          state
+          type      
+        }
+      }
+    }`;
+    const variables = {
+      slug,
+    };
+    const res = await requestSmashgg(query, variables);
+    const tournament: Required<ITournament> = res.tournament;
+    if (
+      tournament.endAt < afterDateUnixTime ||
+      tournament.endAt > beforeDateUnixTime
+    ) {
+      return [];
+    }
+    return tournament.events.map((event) => {
+      const expandedEvent: IExpandedEvent = {
+        ...event,
+        tournamentName: tournament.name,
+        endAt: tournament.endAt,
+      };
+      return expandedEvent;
+    });
+  }
+
   const events: IExpandedEvent[] = [];
   // 最大でも100ページまで
   for (let page = 1; page <= 1000; page++) {
@@ -318,6 +363,19 @@ async function getEvents(
       break;
     }
   }
+  const slugEvents = (
+    await Promise.all(
+      // TODO: slugsを渡してくる
+      [].map(async (slug): Promise<IExpandedEvent[]> => {
+        return await getEventsFromSlug(slug);
+      })
+    )
+  )
+    .flat()
+    .filter((slugEvent) => {
+      !events.some((addedEvent) => addedEvent.id === slugEvent.id);
+    });
+  events.push(...slugEvents);
 
   return events.filter((event) => {
     return (
