@@ -376,6 +376,9 @@ async function getEvents(
       !events.some((addedEvent) => addedEvent.id === slugEvent.id);
     });
   events.push(...slugEvents);
+  events.sort((a, b) => {
+    return Number(b.endAt) - Number(a.endAt);
+  });
 
   return events.filter((event) => {
     return (
