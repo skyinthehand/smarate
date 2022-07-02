@@ -84,9 +84,6 @@ interface IEvent {
   numEntrants: number;
   state: EActivityState;
   type: number;
-  videogame: {
-    id: number;
-  };
 }
 
 interface IExpandedEvent extends IEvent {
@@ -285,15 +282,14 @@ async function getEvents(
               name
               countryCode
               endAt
-              events {
+              events (filter: {
+                videogameId: 1386
+              }) {
                 id
                 name
                 numEntrants
                 state
                 type
-                videogame {
-                  id
-                }
               }
             }
           }
@@ -339,7 +335,6 @@ async function getEvents(
 
   return events.filter((event) => {
     return (
-      event.videogame.id === 1386 &&
       !event.name.includes("Squad") &&
       !event.tournamentName.includes("ビギナーズ") &&
       !event.tournamentName.includes("マスターズ") &&
