@@ -44,3 +44,15 @@ export async function setPrData(
   await prDataDoc.set(savedData);
   return;
 }
+
+/**
+ * Get slug data
+ * @param {string} collectionName
+ * @return {Promise<string[]>}
+ */
+export async function getSlugData(collectionName: string): Promise<string[]> {
+  const db = admin.firestore();
+  const slugsRef = db.collection(collectionName);
+  const slugs = await slugsRef.get();
+  return slugs.docs.map((slugDoc) => slugDoc.data().slug);
+}
