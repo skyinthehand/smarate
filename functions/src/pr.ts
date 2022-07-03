@@ -373,7 +373,7 @@ async function getEvents(
   )
     .flat()
     .filter((slugEvent) => {
-      !events.some((addedEvent) => addedEvent.id === slugEvent.id);
+      return !events.some((addedEvent) => addedEvent.id === slugEvent.id);
     });
   events.push(...slugEvents);
   events.sort((a, b) => {
