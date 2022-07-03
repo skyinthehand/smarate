@@ -363,10 +363,12 @@ async function getEvents(
       break;
     }
   }
+  const slugs = await prFirestore.getSlugData(
+    `${prSetting.countryCode.toLowerCase()}_slugs`
+  );
   const slugEvents = (
     await Promise.all(
-      // TODO: slugsを渡してくる
-      [].map(async (slug): Promise<IExpandedEvent[]> => {
+      slugs.map(async (slug): Promise<IExpandedEvent[]> => {
         return await getEventsFromSlug(slug);
       })
     )
