@@ -1,12 +1,8 @@
-import * as functions from "firebase-functions";
-import axios from "axios";
 import * as moment from "moment-timezone";
 import { Moment } from "moment";
 
 import * as prFirestore from "./firestore_pr";
-
-const config = functions.config();
-const smashggAuthToken = config.smashgg.authtoken as string;
+import { requestSmashgg } from "./util/smashgg";
 
 interface IPlacementToPoint {
   placement: number;
@@ -84,9 +80,6 @@ interface IEvent {
   numEntrants: number;
   state: EActivityState;
   type: number;
-  videogame: {
-    id: number;
-  };
 }
 
 interface IExpandedEvent extends IEvent {
@@ -242,6 +235,7 @@ async function createPrDataAndSave(
     throw e;
   }
 }
+
 /**
  * 対象のevent取得
  * @param {number} afterDateUnixTime
@@ -262,10 +256,7 @@ async function getEvents(
    * @return {Promise<IExpandedEvent[]>}
    */
   async function getEventsInPage(page: number): Promise<IExpandedEvent[]> {
-    const eventRes = await axios.post(
-      "https://api.smash.gg/gql/alpha",
-      {
-        query: `query TournamentsByCountry
+    const query = `query TournamentsByCountry
         ($afterDate: Timestamp!, $beforeDate: Timestamp!,
           $countryCode: String!, $page: Int!) {
           tournaments(query: {
@@ -285,34 +276,26 @@ async function getEvents(
               name
               countryCode
               endAt
-              events {
+              events (filter: {
+                videogameId: 1386
+              }) {
                 id
                 name
                 numEntrants
                 state
                 type
-                videogame {
-                  id
-                }
               }
             }
           }
-        }`,
-        variables: {
-          afterDate: afterDateUnixTime,
-          beforeDate: beforeDateUnixTime,
-          countryCode,
-          page,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${smashggAuthToken}`,
-        },
-      }
-    );
-    const tournaments: Required<ITournament>[] =
-      eventRes.data.data.tournaments.nodes;
+        }`;
+    const variables = {
+      afterDate: afterDateUnixTime,
+      beforeDate: beforeDateUnixTime,
+      countryCode,
+      page,
+    };
+    const eventRes = await requestSmashgg(query, variables);
+    const tournaments: Required<ITournament>[] = eventRes.tournaments.nodes;
     return tournaments
       .map((tournament) => {
         return tournament.events.map((event) => {
@@ -327,6 +310,50 @@ async function getEvents(
       .flat();
   }
 
+  /**
+   * slugに該当するevent取得
+   * 期間外の場合は空配列
+   * @param {string} slug
+   * @return {Promise<IExpandedEvent[]>}
+   */
+  async function getEventsFromSlug(slug: string): Promise<IExpandedEvent[]> {
+    const query = `query GetEvent($slug: String!) {
+      tournament(slug: $slug) {
+        id
+        name
+        endAt
+        events (filter: {
+          videogameId: 1386
+        }) {
+          id
+          name
+          numEntrants
+          state
+          type      
+        }
+      }
+    }`;
+    const variables = {
+      slug,
+    };
+    const res = await requestSmashgg(query, variables);
+    const tournament: Required<ITournament> = res.tournament;
+    if (
+      tournament.endAt < afterDateUnixTime ||
+      tournament.endAt > beforeDateUnixTime
+    ) {
+      return [];
+    }
+    return tournament.events.map((event) => {
+      const expandedEvent: IExpandedEvent = {
+        ...event,
+        tournamentName: tournament.name,
+        endAt: tournament.endAt,
+      };
+      return expandedEvent;
+    });
+  }
+
   const events: IExpandedEvent[] = [];
   // 最大でも100ページまで
   for (let page = 1; page <= 1000; page++) {
@@ -336,10 +363,27 @@ async function getEvents(
       break;
     }
   }
+  const slugs = await prFirestore.getSlugData(
+    `${prSetting.countryCode.toLowerCase()}_slugs`
+  );
+  const slugEvents = (
+    await Promise.all(
+      slugs.map(async (slug): Promise<IExpandedEvent[]> => {
+        return await getEventsFromSlug(slug);
+      })
+    )
+  )
+    .flat()
+    .filter((slugEvent) => {
+      return !events.some((addedEvent) => addedEvent.id === slugEvent.id);
+    });
+  events.push(...slugEvents);
+  events.sort((a, b) => {
+    return Number(b.endAt) - Number(a.endAt);
+  });
 
   return events.filter((event) => {
     return (
-      event.videogame.id === 1386 &&
       !event.name.includes("Squad") &&
       !event.tournamentName.includes("ビギナーズ") &&
       !event.tournamentName.includes("マスターズ") &&
@@ -378,10 +422,7 @@ async function getEventStandings(
   eventId: string,
   baseDate: Moment
 ): Promise<IStandingWithPoint[]> {
-  const standingsRes = await axios.post(
-    "https://api.smash.gg/gql/alpha",
-    {
-      query: `query EventStandings($eventId: ID!) {
+  const query = `query EventStandings($eventId: ID!) {
         event(id: $eventId) {
           id
           name
@@ -414,25 +455,20 @@ async function getEventStandings(
             }
           }
         }
-      }`,
-      variables: {
-        eventId,
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${smashggAuthToken}`,
-      },
-    }
-  );
-  if (!standingsRes.data.data) {
+      }`;
+  const variables = {
+    eventId,
+  };
+  const standingsRes = await requestSmashgg(query, variables);
+  if (!standingsRes) {
     return Promise.reject(
       new StandingDataNotFoundError("data not found error")
     );
   }
-  const endAt = standingsRes.data.data.event.tournament.endAt;
-  const numEntrants = standingsRes.data.data.event.numEntrants;
-  const standings = standingsRes.data.data.event.standings.nodes;
+  const event = standingsRes.event;
+  const endAt = event.tournament.endAt;
+  const numEntrants = event.numEntrants;
+  const standings = event.standings.nodes;
   return standings
     .filter((standing: IStanding) => {
       return standing.entrant.participants[0].player.user;
